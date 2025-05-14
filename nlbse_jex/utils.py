@@ -14,7 +14,7 @@ def read_files_weighted_loss(args):
         if wl.endswith(".py"):
             function = import_function_from_path(wl)
             ok, mismatches = can_pass_args_with_types(function, args_ok)
-            assert ok == True, "\n".join(mismatches)
+            assert ok is True, "\n".join(mismatches)
             args.weighted_loss[index] = function
 
     return args
