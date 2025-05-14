@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: NLBSE_JEX
+Version: 0.1.0
+Summary: A simple Hello World CLI tool
+Author-email: Moritz Mock <moritz.mock@student.unibz.it>, Thomas Borsani <thomas.borsani@student.unibz.it>, Giuseppe Di Fatta <giuseppe.difatta@unibz.it>, Barbara Russo <barbara.russo@unibz.it>
+License: MIT
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Requires-Dist: numpy==2.2.5
+Requires-Dist: pandas==2.2.3
+Requires-Dist: python-dateutil==2.9.0.post0
+Requires-Dist: pytz==2025.2
+Requires-Dist: six==1.17.0
+Requires-Dist: tzdata==2025.2

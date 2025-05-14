@@ -1,0 +1,2 @@
+[console_scripts]
+nlbse_jex = nlbse_jex.__main__:main
