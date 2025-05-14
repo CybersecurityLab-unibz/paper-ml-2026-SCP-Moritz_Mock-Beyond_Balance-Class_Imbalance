@@ -1,0 +1,6 @@
+env
+build
+
+**/.DS_Store
+**/*.egg-info/
+
