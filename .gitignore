@@ -1,6 +1,6 @@
 env
 build
-
+config.yml
 **/.DS_Store
 **/*.egg-info/
 

@@ -4,6 +4,7 @@ import os
 import ast
 from typing import get_origin, get_args, Union
 import inspect
+import yaml
 
 def read_files_weighted_loss(args):
     args_ok = {
@@ -118,13 +119,35 @@ def str2bool(v):
     else:
         raise ValueError('Boolean value expected.')
 
+def generate_base_config(path):
+    data = {
+        'epochs': [1, 2, 5, 10],
+        'weighted_loss': ['EW', 'FAMO', 'test_function.py']
+    }
+
+    with open(path, 'w') as file:
+        yaml.dump(data, file, default_flow_style=False)
+
+def read_config(args):
+    with open(args.config, 'r') as file:
+        config = yaml.safe_load(file)
+
+    for key, value in config.items():
+        setattr(args, key, value)
+
+    return args
+
+
 def parse_args():
     parser = ArgumentParser()
 
-    parser.add_argument("--hyper-parameter-search", default=False, type=str2bool)
+    parser.add_argument("--generate-config-hyper-parameter-search", default=False, type=str2bool)
+    parser.add_argument("--config", type=str)
     parser.add_argument("--weighted-loss", nargs="*", type=str, default=["EW"])
     parser.add_argument("--train", default=".", type=str)
     parser.add_argument("--val", default=".", type=str)
     parser.add_argument("--test", default=".", type=str)
+    parser.add_argument("--save-model-instances", default="all", type=str, choices=["best", "top-5", "top-10", "all"])
+    parser.add_argument("--save-model-path", default=".", type=str)
 
     return parser.parse_args()
