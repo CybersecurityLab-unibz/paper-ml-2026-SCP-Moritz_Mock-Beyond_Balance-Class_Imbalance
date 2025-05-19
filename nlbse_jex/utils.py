@@ -142,7 +142,7 @@ def parse_args():
     parser = ArgumentParser()
 
     parser.add_argument("--generate-config-hyper-parameter-search", default=False, type=str2bool)
-    parser.add_argument("--config", type=str)
+    parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--weighted-loss", nargs="*", type=str, default=["EW"])
     parser.add_argument("--train", default=".", type=str)
     parser.add_argument("--val", default=".", type=str)
