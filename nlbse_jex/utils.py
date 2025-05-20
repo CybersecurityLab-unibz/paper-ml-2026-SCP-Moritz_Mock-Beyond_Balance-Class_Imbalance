@@ -31,24 +31,24 @@ def can_pass_args_with_types(func, args_dict):
         if param is None:
             # Check for **kwargs
             if not any(p.kind == p.VAR_KEYWORD for p in params.values()):
-                mismatches.append(f"Unexpected argument '{name}'")
+                mismatches.append(f"Missing required argument '{name}'")
             continue
 
         expected_type = param.annotation
         if expected_type is not inspect.Parameter.empty:
             if not _is_instance_of(value, expected_type):
                 mismatches.append(
-                    f"Argument '{name}' has wrong type: expected {expected_type}, got {type(value)}"
+                    f"Argument '{name}' has wrong type: expected {type(value)}, got {expected_type}"
                 )
 
-    # Check for missing required args
+    # Check for to many args
     for p in params.values():
         if (
             p.default is inspect.Parameter.empty and
             p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY) and
             p.name not in args_dict
         ):
-            mismatches.append(f"Missing required argument '{p.name}'")
+            mismatches.append(f"Unexpected argument '{p.name}'")
 
     return len(mismatches) == 0, mismatches
 
@@ -144,9 +144,9 @@ def parse_args():
     parser.add_argument("--generate-config-hyper-parameter-search", default=False, type=str2bool)
     parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--weighted-loss", nargs="*", type=str, default=["EW"])
-    parser.add_argument("--train", default=".", type=str)
-    parser.add_argument("--val", default=".", type=str)
-    parser.add_argument("--test", default=".", type=str)
+    parser.add_argument("--train", required=True, type=str)
+    parser.add_argument("--val", default=None, type=str)
+    parser.add_argument("--test", required=True, type=str)
     parser.add_argument("--save-model-instances", default="all", type=str, choices=["best", "top-5", "top-10", "all"])
     parser.add_argument("--save-model-path", default=".", type=str)
 
