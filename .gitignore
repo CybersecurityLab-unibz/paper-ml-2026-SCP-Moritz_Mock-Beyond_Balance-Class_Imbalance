@@ -7,3 +7,4 @@ config.yml
 test_function.py
 __pycache__/
 
+checkpoints
