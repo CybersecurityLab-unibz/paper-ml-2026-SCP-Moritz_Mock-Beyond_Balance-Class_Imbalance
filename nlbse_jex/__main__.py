@@ -6,6 +6,8 @@ from nlbse_jex.utils import read_config
 from setfit import SetFitModel, Trainer, TrainingArguments, SetFitTrainer
 from datasets import Dataset, load_dataset
 import numpy as np
+from nlbse_jex.proxy import Proxy
+
 
 def main():
     args = parse_args()
@@ -26,8 +28,16 @@ def main():
         if isinstance(wl, types.FunctionType):
             wl("moritz")
 
-
+    p = Proxy(args)
+    p.create_model("FacebookAI/roberta-base")
+    print(p.get_model_type())
+    print(p.get_model())
+    p.create_model("/Users/moritzmock/.cache/huggingface/hub/models--microsoft--codebert-base")
+    print(p.get_model_type())
+    print(p.get_model())
     print(args)
+
+    quit()
 
     ########################### Single task ###########################
     '''
