@@ -5,6 +5,8 @@ import ast
 from typing import get_origin, get_args, Union
 import inspect
 import yaml
+import numpy as np
+
 
 def read_files_weighted_loss(args):
     args_ok = {
@@ -137,6 +139,40 @@ def read_config(args):
 
     return args
 
+
+def compute_metrics(preds, labels):
+    if hasattr(preds, "detach"):
+        preds = preds.detach().cpu().numpy()
+    elif isinstance(preds, list):
+        preds = np.array(preds)
+
+    if hasattr(labels, "detach"):
+        labels = labels.detach().cpu().numpy()
+    elif isinstance(labels, list):
+        labels = np.array(labels)
+
+    num_classes = labels.shape[1]
+    class_metrics = {}
+
+    for class_idx in range(num_classes):
+        tp = np.sum((preds[:, class_idx] == 1) & (labels[:, class_idx] == 1))
+        fp = np.sum((preds[:, class_idx] == 1) & (labels[:, class_idx] == 0))
+        tn = np.sum((preds[:, class_idx] == 0) & (labels[:, class_idx] == 0))
+        fn = np.sum((preds[:, class_idx] == 0) & (labels[:, class_idx] == 1))
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+        class_metrics[f"class_{class_idx}_true_positives"] = tp
+        class_metrics[f"class_{class_idx}_false_positives"] = fp
+        class_metrics[f"class_{class_idx}_true_negatives"] = tn
+        class_metrics[f"class_{class_idx}_false_negatives"] = fn
+        class_metrics[f"class_{class_idx}_precision"] = precision
+        class_metrics[f"class_{class_idx}_recall"] = recall
+        class_metrics[f"class_{class_idx}_f1"] = f1
+
+    return class_metrics
 
 def parse_args():
     parser = ArgumentParser()
