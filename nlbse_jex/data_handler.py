@@ -2,6 +2,8 @@ from datasets import load_dataset
 import numpy as np
 import logging
 
+from nlbse_jex.linear_weights import LinearWeights
+
 dataset_id = 'NLBSE/nlbse25-code-comment-classification'
 
 class DataHandler():
@@ -30,11 +32,7 @@ class DataHandler():
         # Convert to dict: {class_index: weight}
         self.num_classes = self.labels.shape[1]
         self.class_weight_dicts = []
+        linear_weights = LinearWeights("ICF", self.labels) # TODO take arg from args
+        self.class_weight_dicts = linear_weights.get_class_weight_dicts()
 
-        # TODO make this in a way that the args control the type of weights are calculated
-        for i in range(self.num_classes):
-            positives = self.labels[:, i].sum()
-            negatives = total - positives
-            weight_pos = positives / total
-            weight_neg = negatives / total
-            self.class_weight_dicts.append({1: weight_neg, 0: weight_pos})
+        self.logger.info(self.class_weight_dicts)

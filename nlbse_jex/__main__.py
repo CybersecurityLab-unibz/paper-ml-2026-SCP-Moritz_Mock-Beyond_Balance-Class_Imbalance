@@ -36,9 +36,9 @@ def main():
 
     p = Proxy(args)
     p.create_model()
-    p.create_trainer()
-    p.train()
-    p.eval()
+    #p.create_trainer()
+    #p.train()
+    #p.eval()
 
     #p.create_model("/leonardo/home/userexternal/mmock000/.cache/huggingface/hub/models--sentence-transformers--paraphrase-MiniLM-L6-v2/snapshots/c9a2bfebc254878aee8c3aca9e6844d5bbb102d1")
 
