@@ -42,18 +42,26 @@ class Proxy():
 
         return None
 
-    def create_model(self, model_path):
-        self.model_path = model_path
+    def create_model(self):
+        self.model_path = self.args.model_path
         self.model_type = self._type_of_model()
 
-
-        print(self.model_type in self.roberta_whitelist)
-
         if self.model_type in self.roberta_whitelist:
-            self.model = RoBERTa_models(self.model_path)
+            self.model = RoBERTa_models(self.args)
 
         if self.model_type in self.setfit_whitelist:
-            self.model = SetFit_models(self.model_path)
+            self.model = SetFit_models(self.args)
+
+        self.model.initialize()
+
+    def create_trainer(self):
+        self.model.create_trainer()
+
+    def train(self):
+        self.model.train()
+
+    def eval(self):
+        self.model.eval()
 
     def get_model_type(self):
         return self.model_type
