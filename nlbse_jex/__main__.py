@@ -7,7 +7,13 @@ from setfit import SetFitModel, Trainer, TrainingArguments, SetFitTrainer
 from datasets import Dataset, load_dataset
 import numpy as np
 from nlbse_jex.proxy import Proxy
+import logging
 
+logging.basicConfig(
+    format='%(asctime)s - %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 def main():
     args = parse_args()

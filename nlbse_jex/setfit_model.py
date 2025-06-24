@@ -29,9 +29,6 @@ class SetFitModels(DataHandler):
         self.model = None
         self.trainer = None
 
-    def __str__(self):
-        return "hello setfit"
-
     def initialize(self):
 
         model_body = SentenceTransformer(self.model_id)
@@ -50,6 +47,8 @@ class SetFitModels(DataHandler):
             use_contrastive_head=False
         )
 
+        self.logger.info("Defined model!")
+
     def create_trainer(self):
         args = TrainingArguments(
             output_dir=".",
@@ -67,6 +66,8 @@ class SetFitModels(DataHandler):
             column_mapping={"combo": "text", "labels": "label"},
             metric=compute_metrics
         )
+
+        self.logger.info("Created Trainer!")
 
     def train(self):
         self.trainer.train()

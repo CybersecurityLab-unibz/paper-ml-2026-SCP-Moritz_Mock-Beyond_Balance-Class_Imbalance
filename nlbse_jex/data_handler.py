@@ -1,10 +1,12 @@
 from datasets import load_dataset
 import numpy as np
+import logging
 
 dataset_id = 'NLBSE/nlbse25-code-comment-classification'
 
 class DataHandler():
     def __init__(self):
+        self.logger = logging.getLogger()
         self.num_classes = None
         self.class_weight_dicts = None
         self.labels = None
@@ -15,7 +17,7 @@ class DataHandler():
             f1 = metrics.get(f"class_{i}_f1")
             prec = metrics.get(f"class_{i}_precision")
             rec = metrics.get(f"class_{i}_recall")
-            print(f"Class {i}: F1={f1:.3f}, Precision={prec:.3f}, Recall={rec:.3f}")
+            self.logger.info(f"Class {i}: F1={f1:.3f}, Precision={prec:.3f}, Recall={rec:.3f}")
 
     def read_data(self):
         # TODO make this dynamic, such that the dataset is read from the args.
