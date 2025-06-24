@@ -1,6 +1,6 @@
 from transformers import AutoTokenizer
 
-class RoBERTa_models():
+class RoBERTaModels():
 
     def __init__(self, args):
         self.args = args

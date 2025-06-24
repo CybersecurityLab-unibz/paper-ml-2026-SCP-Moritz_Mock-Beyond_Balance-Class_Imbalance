@@ -2,9 +2,8 @@ import os
 import json
 from huggingface_hub import model_info
 from huggingface_hub.utils import HfHubHTTPError
-
-from nlbse_jex.robert_type import RoBERTa_models
-from nlbse_jex.setfit_type import SetFit_models
+from nlbse_jex.roberts_model import RoBERTaModels
+from nlbse_jex.setfit_model import SetFitModels
 
 
 class Proxy():
@@ -47,10 +46,10 @@ class Proxy():
         self.model_type = self._type_of_model()
 
         if self.model_type in self.roberta_whitelist:
-            self.model = RoBERTa_models(self.args)
+            self.model = RoBERTaModels(self.args)
 
         if self.model_type in self.setfit_whitelist:
-            self.model = SetFit_models(self.args)
+            self.model = SetFitModels(self.args)
 
         self.model.initialize()
 
