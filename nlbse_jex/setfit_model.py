@@ -60,9 +60,8 @@ class SetFitModels(DataHandler):
         self.trainer = Trainer(
             model=self.model,
             args=args,
-            train_dataset=self.reference_dataset["pharo_train"].select(range(50)), #TODO remove range
-            eval_dataset=self.reference_dataset["pharo_test"],
-            column_mapping={"combo": "text", "labels": "label"},
+            train_dataset=self.data_train.select(range(50)), #TODO remove range
+            eval_dataset=self.data_test,
             metric=compute_metrics
         )
 

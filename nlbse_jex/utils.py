@@ -8,17 +8,17 @@ import yaml
 import numpy as np
 
 
-def read_files_weighted_loss(args):
+def read_files_weighted_loss_strategy(args):
     args_ok = {
         "labels": "placeholder"
     }
 
-    for index, wl in enumerate(args.weighted_loss):
+    for index, wl in enumerate(args.weighted_loss_strategy):
         if wl.endswith(".py"):
             function = import_function_from_path(wl)
             ok, mismatches = can_pass_args_with_types(function, args_ok)
             assert ok is True, "\n".join(mismatches)
-            args.weighted_loss[index] = function
+            args.weighted_loss_strategy[index] = function
 
     return args
 
@@ -124,7 +124,7 @@ def str2bool(v):
 def generate_base_config(path):
     data = {
         'epochs': [1, 2, 5, 10],
-        'weighted_loss': ['EW', 'FAMO', 'test_function.py']
+        'weighted_loss_strategy': ['EW', 'FAMO', 'test_function.py']
     }
 
     with open(path, 'w') as file:
@@ -183,8 +183,11 @@ def parse_args():
     parser.add_argument("--train", required=True, type=str)
     parser.add_argument("--val", default=None, type=str)
     parser.add_argument("--test", required=True, type=str)
+    parser.add_argument("--column-key-text", type=str, required=True)
+    parser.add_argument("--column-key-label", type=str, required=True)
     parser.add_argument("--save-model-instances", default="all", type=str, choices=["best", "top-5", "top-10", "all"])
     parser.add_argument("--save-model-path", default=".", type=str)
     parser.add_argument("--model-path", default="sentence-transformers/paraphrase-MiniLM-L6-v2", type=str)
+    parser.add_argument("--result-path", type=str)
 
     return parser.parse_args()
