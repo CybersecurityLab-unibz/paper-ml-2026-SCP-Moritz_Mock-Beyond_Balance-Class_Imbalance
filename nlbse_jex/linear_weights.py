@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-
+import types
 
 class LinearWeights():
 
@@ -18,6 +18,8 @@ class LinearWeights():
             self._ICF()
         if self.type == "RBF":
             self._RBF()
+        if isinstance(self.type, types.FunctionType):
+            self.class_weight_dicts = self.type(self.labels)
         else:
             self.logger.error("Not defined type of liner weights!")
 

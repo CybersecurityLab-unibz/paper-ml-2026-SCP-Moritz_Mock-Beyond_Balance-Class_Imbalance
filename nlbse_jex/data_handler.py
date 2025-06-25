@@ -7,8 +7,9 @@ from nlbse_jex.linear_weights import LinearWeights
 dataset_id = 'NLBSE/nlbse25-code-comment-classification'
 
 class DataHandler():
-    def __init__(self):
+    def __init__(self, args):
         self.logger = logging.getLogger()
+        self.args = args
         self.num_classes = None
         self.class_weight_dicts = None
         self.labels = None
@@ -32,7 +33,8 @@ class DataHandler():
         # Convert to dict: {class_index: weight}
         self.num_classes = self.labels.shape[1]
         self.class_weight_dicts = []
-        linear_weights = LinearWeights("ICF", self.labels) # TODO take arg from args
+        self.logger.info(self.args)
+        linear_weights = LinearWeights(self.args.weighted_loss_strategy, self.labels)
         self.class_weight_dicts = linear_weights.get_class_weight_dicts()
 
         self.logger.info(self.class_weight_dicts)

@@ -10,7 +10,7 @@ import numpy as np
 
 def read_files_weighted_loss(args):
     args_ok = {
-        "name": "placeholder"
+        "labels": "placeholder"
     }
 
     for index, wl in enumerate(args.weighted_loss):
@@ -179,7 +179,7 @@ def parse_args():
 
     parser.add_argument("--generate-config-hyper-parameter-search", default=False, type=str2bool)
     parser.add_argument("--config", type=str, default=None)
-    parser.add_argument("--weighted-loss", nargs="*", type=str, default=["EW", "test_function.py"])
+    parser.add_argument("--weighted-loss-strategy", nargs="*", type=str, default=["EW", "test_function.py"])
     parser.add_argument("--train", required=True, type=str)
     parser.add_argument("--val", default=None, type=str)
     parser.add_argument("--test", required=True, type=str)

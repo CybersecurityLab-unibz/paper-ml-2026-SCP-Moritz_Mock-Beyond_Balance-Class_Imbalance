@@ -22,9 +22,8 @@ class MultiOutputClassifier:
 class SetFitModels(DataHandler):
 
     def __init__(self, args):
-        super().__init__()
+        super().__init__(args)
         super().calculate_weights()
-        self.args = args
         self.model_id = self.args.model_path
         self.model = None
         self.trainer = None

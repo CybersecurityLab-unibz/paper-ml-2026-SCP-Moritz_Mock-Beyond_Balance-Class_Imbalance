@@ -28,11 +28,17 @@ def main():
 
     args = read_files_weighted_loss(args)
 
-    for wl in args.weighted_loss:
+    for wl in args.weighted_loss_strategy:
         if isinstance(wl, str):
             print(wl)
         if isinstance(wl, types.FunctionType):
-            wl("moritz")
+            logging.info(wl.__name__)
+
+    print(args)
+
+    args.weighted_loss_strategy = args.weighted_loss_strategy[1]
+
+    print(args)
 
     p = Proxy(args)
     p.create_model()
