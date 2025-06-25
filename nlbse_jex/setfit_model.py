@@ -1,9 +1,12 @@
+import os
+
 from setfit import SetFitModel, Trainer, TrainingArguments
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.linear_model import LogisticRegression
 from nlbse_jex.data_handler import DataHandler
 from nlbse_jex.utils import compute_metrics
+import joblib
 
 class MultiOutputClassifier:
     def __init__(self, estimators):
@@ -50,11 +53,14 @@ class SetFitModels(DataHandler):
 
     def create_trainer(self):
         args = TrainingArguments(
-            output_dir=".",
-            logging_dir=".",
-            batch_size=32,
-            num_epochs=1,
-            save_strategy="no"
+            output_dir=self.output_path,
+            logging_dir=self.logs_path,
+            batch_size=self.args.batch_size,
+            num_epochs=self.args.epoch,
+            head_learning_rate=self.args.lr, # TODO check with thomas
+            l2_weight=self.args.weight_decay, # TODO check with thomas
+            save_strategy="epoch",
+            save_total_limit=1 if self.args.save_model_instances == "last" else self.args.epoch
         )
 
         self.trainer = Trainer(
@@ -69,7 +75,10 @@ class SetFitModels(DataHandler):
 
     def train(self):
         self.trainer.train()
+        self.model.model_body.save(os.path.join(self.output_path, "model_body"))
+        joblib.dump(self.model.model_head, os.path.join(self.output_path, "model_head.joblib"))
 
     def eval(self):
         zeroshot_metrics = self.trainer.evaluate()
         self.summarize_metrics(zeroshot_metrics)
+        self.update_csv(zeroshot_metrics)

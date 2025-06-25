@@ -4,11 +4,12 @@ from huggingface_hub import model_info
 from huggingface_hub.utils import HfHubHTTPError
 from nlbse_jex.roberts_model import RoBERTaModels
 from nlbse_jex.setfit_model import SetFitModels
-
+import logging
 
 class Proxy():
 
     def __init__(self, args):
+        self.logger = logging.getLogger()
         self.model_path = None
         self.model_type = None
         self.model = None
@@ -57,6 +58,7 @@ class Proxy():
         self.model.create_trainer()
 
     def train(self):
+        self.logger.info(self.model)
         self.model.train()
 
     def eval(self):
@@ -67,3 +69,6 @@ class Proxy():
 
     def get_model(self):
         return self.model
+
+    def run_already_exists(self):
+        return self.model.run_already_exists()

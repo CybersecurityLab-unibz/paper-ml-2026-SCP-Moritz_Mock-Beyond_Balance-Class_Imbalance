@@ -6,7 +6,8 @@ from typing import get_origin, get_args, Union
 import inspect
 import yaml
 import numpy as np
-
+import shutil
+import logging
 
 def read_files_weighted_loss_strategy(args):
     args_ok = {
@@ -174,20 +175,51 @@ def compute_metrics(preds, labels):
 
     return class_metrics
 
+
+def copy_all_files(src_folder, dst_folder):
+    if not os.path.exists(dst_folder):
+        os.makedirs(dst_folder)
+
+    for root, dirs, files in os.walk(src_folder):
+        dest_path = os.path.join(dst_folder, os.path.relpath(root, src_folder))
+        if not os.path.exists(dest_path):
+            os.makedirs(dest_path)
+
+        for file in files:
+            src_file = os.path.join(root, file)
+            dst_file = os.path.join(dest_path, file)
+            shutil.copy2(src_file, dst_file)
+
+
+def recursively_delete_all_files(path):
+    if os.path.exists(path):
+        try:
+            shutil.rmtree(path)
+            logging.info(f"Folder '{path}' deleted successfully.")
+        except Exception as e:
+            logging.info(f"Error while deleting folder '{path}' - error message -> {e}")
+
+
+
 def parse_args():
     parser = ArgumentParser()
 
     parser.add_argument("--generate-config-hyper-parameter-search", default=False, type=str2bool)
     parser.add_argument("--config", type=str, default=None)
     parser.add_argument("--weighted-loss-strategy", nargs="*", type=str, default=["EW", "test_function.py"])
+    parser.add_argument("--batch-size", nargs="*", type=int, default=[32])
+    parser.add_argument("--epoch", nargs="*", type=int, default=[1])
+    parser.add_argument("--lr", nargs="*", type=int, default=[3e-5])
+    parser.add_argument("--weight-decay", nargs="*", type=int, default=[0])
     parser.add_argument("--train", required=True, type=str)
     parser.add_argument("--val", default=None, type=str)
     parser.add_argument("--test", required=True, type=str)
     parser.add_argument("--column-key-text", type=str, required=True)
     parser.add_argument("--column-key-label", type=str, required=True)
-    parser.add_argument("--save-model-instances", default="all", type=str, choices=["best", "top-5", "top-10", "all"])
+    parser.add_argument("--save-model-instances", default="last", type=str, choices=["last", "all"])
     parser.add_argument("--save-model-path", default=".", type=str)
     parser.add_argument("--model-path", default="sentence-transformers/paraphrase-MiniLM-L6-v2", type=str)
-    parser.add_argument("--result-path", type=str)
+    parser.add_argument("--result-path", type=str, default=".")
+
 
     return parser.parse_args()
