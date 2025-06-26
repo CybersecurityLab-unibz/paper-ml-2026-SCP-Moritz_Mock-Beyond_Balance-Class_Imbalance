@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+import argparse
 import importlib.util
 import os
 import ast
@@ -124,21 +124,83 @@ def str2bool(v):
 
 def generate_base_config(path):
     data = {
-        'epochs': [1, 2, 5, 10],
-        'weighted_loss_strategy': ['EW', 'FAMO', 'test_function.py']
+        'epoch': [1, 2, 5, 10],
+        'weighted_loss_strategy': ['EW']
     }
 
     with open(path, 'w') as file:
         yaml.dump(data, file, default_flow_style=False)
 
-def read_config(args):
-    with open(args.config, 'r') as file:
-        config = yaml.safe_load(file)
 
-    for key, value in config.items():
-        setattr(args, key, value)
+def load_yaml_config(config_path):
+    with open(config_path, 'r') as f:
+        return yaml.safe_load(f)
 
-    return args
+
+def validate_and_cast_config(yaml_config, parser):
+    validated_config = {}
+    arg_dest_to_action = {action.dest: action for action in parser._actions}
+
+    for key, value in yaml_config.items():
+        if key not in arg_dest_to_action:
+            raise ValueError(f"Unknown config key: '{key}' (not defined in argparse)")
+
+        action = arg_dest_to_action[key]
+        expected_type = action.type
+        nargs = action.nargs
+
+        # Handle boolean flags (store_true / store_false)
+        if isinstance(action, argparse._StoreTrueAction):
+            if isinstance(value, bool):
+                validated_config[key] = value
+            elif isinstance(value, (int, str)):
+                validated_config[key] = str(value).lower() in ['true', '1', 'yes', 'on']
+            else:
+                raise ValueError(f"Invalid type for key '{key}': expected boolean-like value")
+
+        # Handle nargs / list-type args
+        elif nargs is not None:
+            if not isinstance(value, list):
+                raise ValueError(f"Expected a list for argument '{key}', but got {type(value).__name__}")
+
+            # Cast each element in the list
+            if expected_type is not None:
+                try:
+                    validated_config[key] = [expected_type(v) for v in value]
+                except Exception as e:
+                    raise ValueError(f"Type error in list for key '{key}': expected elements of type {expected_type.__name__}, got {value}")
+            else:
+                validated_config[key] = value  # No type specified, accept as-is
+
+        # Handle normal scalar args
+        elif expected_type is not None:
+            try:
+                validated_config[key] = expected_type(value)
+            except Exception as e:
+                raise ValueError(f"Type error for key '{key}': expected {expected_type.__name__}, got {value} ({type(value).__name__})")
+        else:
+            validated_config[key] = value
+
+    return validated_config
+
+
+def merge_config_with_args(yaml_config, cli_args, parser):
+    config = vars(cli_args).copy()
+
+    for key, value in yaml_config.items():
+        # CLI args take priority
+        if getattr(cli_args, key, None) in [None, parser.get_default(key)]:
+            config[key] = value
+
+    return config
+
+
+def read_config(args, parser):
+    raw_yaml = load_yaml_config(args.config_path)
+    logging.info(raw_yaml)
+    yaml_config = validate_and_cast_config(raw_yaml, parser)
+    logging.info(raw_yaml)
+    return merge_config_with_args(yaml_config, args, parser)
 
 
 def compute_metrics(preds, labels):
@@ -202,10 +264,10 @@ def recursively_delete_all_files(path):
 
 
 def parse_args():
-    parser = ArgumentParser()
+    parser = argparse.ArgumentParser()
 
-    parser.add_argument("--generate-config-hyper-parameter-search", default=False, type=str2bool)
-    parser.add_argument("--config", type=str, default=None)
+    parser.add_argument("--generate-base-config", type=str2bool, default=False)
+    parser.add_argument("--config-path", type=str, default=None)
     parser.add_argument("--weighted-loss-strategy", nargs="*", type=str, default=["EW", "test_function.py"])
     parser.add_argument("--batch-size", nargs="*", type=int, default=[32])
     parser.add_argument("--epoch", nargs="*", type=int, default=[1])
@@ -222,4 +284,4 @@ def parse_args():
     parser.add_argument("--result-path", type=str, default=".")
 
 
-    return parser.parse_args()
+    return parser

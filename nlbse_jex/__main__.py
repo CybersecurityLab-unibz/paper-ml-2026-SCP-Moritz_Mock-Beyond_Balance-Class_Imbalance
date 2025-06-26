@@ -14,15 +14,19 @@ logging.basicConfig(
 )
 
 def main():
-    args = parse_args()
-    if args.generate_config_hyper_parameter_search is True:
+    parser = parse_args()
+    args = parser.parse_args()
+
+    if args.generate_base_config is True:
         path = "config.yml"
         generate_base_config(path)
         print(f"Example configuration file was generated under the path {path}")
         quit()
 
-    if args.config is not None:
-        args = read_config(args)
+    if args.config_path is not None:
+        args = read_config(args, parser)
+        logging.info(args)
+
 
     args = read_files_weighted_loss_strategy(args)
 
