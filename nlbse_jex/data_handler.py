@@ -1,6 +1,6 @@
 import re
 import types
-from datasets import Dataset, load_dataset
+from datasets import Dataset, concatenate_datasets
 import os
 import logging
 import pandas as pd
@@ -9,6 +9,7 @@ import numpy as np
 from nlbse_jex.linear_weights import LinearWeights
 from nlbse_jex.utils import copy_all_files
 from nlbse_jex.utils import recursively_delete_all_files
+from nlbse_jex.utils import find_function_callable
 
 dataset_id = 'NLBSE/nlbse25-code-comment-classification'
 
@@ -35,22 +36,29 @@ class DataHandler():
         model_path = re.sub(r"[/-]", "_", self.args.model_path)
         self.dataset_name = re.sub("-", "_", "_".join(self.args.train.split("/")[:-1]))
 
-        parameters = "_".join([
-            str(self.args.batch_size),
-            str(self.args.epoch),
-            str(self.args.lr),
-            str(self.args.weight_decay),
-            self.args.weighted_loss_strategy if not isinstance(self.args.weighted_loss_strategy, types.FunctionType) else self.args.weighted_loss_strategy.__name__
-        ])
-
-        self.output_path = os.path.join(base_path, model_path, self.dataset_name, parameters, "checkpoints")
-        self.logs_path = os.path.join(base_path, model_path, self.dataset_name, parameters, "logs")
-        self.best_model = os.path.join(base_path, model_path, self.dataset_name, "best_model")
         self.csv_path = os.path.join(base_path, model_path, self.dataset_name, "final.csv")
 
-        os.makedirs(self.best_model, exist_ok=True)
-        os.makedirs(self.output_path, exist_ok=True)
-        os.makedirs(self.logs_path, exist_ok=True)
+        if self.args.maximise_model:
+            self.output_path = os.path.join(base_path, model_path, self.dataset_name, "maximise_model", "checkpoints")
+            self.logs_path = os.path.join(base_path, model_path, self.dataset_name, "maximise_model", "logs")
+            os.makedirs(self.output_path, exist_ok=True)
+            os.makedirs(self.logs_path, exist_ok=True)
+        else:
+            parameters = "_".join([
+                str(self.args.batch_size),
+                str(self.args.epoch),
+                str(self.args.lr),
+                str(self.args.weight_decay),
+                self.args.weighted_loss_strategy if not isinstance(self.args.weighted_loss_strategy, types.FunctionType) else self.args.weighted_loss_strategy.__name__
+            ])
+
+            self.output_path = os.path.join(base_path, model_path, self.dataset_name, parameters, "checkpoints")
+            self.logs_path = os.path.join(base_path, model_path, self.dataset_name, parameters, "logs")
+            self.best_model = os.path.join(base_path, model_path, self.dataset_name, "best_model")
+
+            os.makedirs(self.best_model, exist_ok=True)
+            os.makedirs(self.output_path, exist_ok=True)
+            os.makedirs(self.logs_path, exist_ok=True)
 
     def summarize_metrics(self, metrics):
         for i in range(7):  # num classes
@@ -163,6 +171,28 @@ class DataHandler():
         self.data_train = self.data_train.map(lambda ex: {'label': np.fromstring(ex['label'].strip('[]'), sep=' ', dtype=int)})
         self.data_val = self.data_val.map(lambda ex: {'label': np.fromstring(ex['label'].strip('[]'), sep=' ', dtype=int)}) if self.data_val is not None else None
         self.data_test = self.data_test.map(lambda ex: {'label': np.fromstring(ex['label'].strip('[]'), sep=' ', dtype=int)})
+
+    def merge_dataset(self):
+        splits = [self.data_train, self.data_val, self.data_test]
+        splits = [split for split in splits if split is not None]
+
+        self.data_train = concatenate_datasets(splits)
+        self.data_val = None
+        self.data_test = None
+
+        self.logger.info(
+            self.data_train
+        )
+
+    def find_best_args(self):
+        df = pd.read_csv(self.csv_path, sep=";")
+        self.logger.info(df)
+        best_run = df.loc[df["Average F1"].idxmax()]
+        self.args.weighted_loss_strategy = best_run["Weighted Loss Strategy"] if best_run["Weighted Loss Strategy"] in ["EW", "ICF", "RBF"] else find_function_callable(self.args.weighted_loss_strategy, best_run["Weighted Loss Strategy"])
+        self.args.batch_size = int(best_run["Batch Size"])
+        self.args.epoch = int(best_run["Epoch"])
+        self.args.lr = float(best_run["Learning Rate"])
+        self.args.weight_decay = float(best_run["Weight Decay"])
 
 
     def calculate_weights(self):

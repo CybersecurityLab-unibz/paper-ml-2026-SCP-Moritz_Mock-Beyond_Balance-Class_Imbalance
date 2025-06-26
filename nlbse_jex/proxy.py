@@ -65,8 +65,5 @@ class Proxy():
     def get_model_type(self):
         return self.model_type
 
-    def get_model(self):
-        return self.model
-
     def run_already_exists(self):
         return self.model.run_already_exists() if self.model is not None else None

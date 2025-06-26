@@ -32,19 +32,14 @@ def main():
 
     logging.info(args)
 
-    '''
-    # TODO 
-    if args.maximise is True:
-        args = find_best_args()
+
+    if args.maximise_model:
         p = Proxy(args)
         p.create_model()
-        p.set_save_path()
-        p.model.merge_data()
+        p.model.merge_dataset()
         p.create_trainer()
         p.train()
-        #p.eval()
         quit()
-    '''
 
     epoch = args.epoch
     lr = args.lr

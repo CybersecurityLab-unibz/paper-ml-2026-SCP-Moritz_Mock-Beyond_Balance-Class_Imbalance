@@ -26,6 +26,7 @@ class SetFitModels(DataHandler):
 
     def __init__(self, args):
         super().__init__(args)
+        if self.args.maximise_model: super().find_best_args()
         super().calculate_weights()
         self.model_id = self.args.model_path
         self.model = None

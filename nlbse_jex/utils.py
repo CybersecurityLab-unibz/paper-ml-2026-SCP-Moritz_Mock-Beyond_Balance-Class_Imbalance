@@ -7,6 +7,7 @@ import inspect
 import yaml
 import numpy as np
 import shutil
+import types
 import logging
 
 def read_files_weighted_loss_strategy(args):
@@ -262,6 +263,18 @@ def recursively_delete_all_files(path):
             logging.info(f"Error while deleting folder '{path}' - error message -> {e}")
 
 
+def find_function_callable(candidates, function_name):
+    if not candidates:
+        raise ValueError("No weighted loss strategies provided.")
+
+    for candidate in candidates:
+        if isinstance(candidate, types.FunctionType) and candidate.__name__ == function_name:
+            return candidate
+
+    raise ValueError(f"The costum function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'.")
+
+
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -282,6 +295,7 @@ def parse_args():
     parser.add_argument("--save-model-path", default=".", type=str)
     parser.add_argument("--model-path", default="sentence-transformers/paraphrase-MiniLM-L6-v2", type=str)
     parser.add_argument("--result-path", type=str, default=".")
+    parser.add_argument("--maximise-model", type=str2bool, default=False)
 
 
     return parser
