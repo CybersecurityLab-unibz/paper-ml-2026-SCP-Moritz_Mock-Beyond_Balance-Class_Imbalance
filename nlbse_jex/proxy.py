@@ -52,6 +52,8 @@ class Proxy():
         if self.model_type in self.setfit_whitelist:
             self.model = SetFitModels(self.args)
 
+        # TODO if not in any of them exit
+
         self.model.initialize()
 
     def create_trainer(self):
