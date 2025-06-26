@@ -60,6 +60,7 @@ def main():
             p.train()
             p.eval()
         else:
+            p.model.delete_path()
             logging.warning("--------------------")
             logging.warning(f"Execution with the arguments {args} already exists!")
             logging.warning(f"")
