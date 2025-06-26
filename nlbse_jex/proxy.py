@@ -48,23 +48,19 @@ class Proxy():
 
         if self.model_type in self.roberta_whitelist:
             self.model = RoBERTaModels(self.args)
-
-        if self.model_type in self.setfit_whitelist:
+        elif self.model_type in self.setfit_whitelist:
             self.model = SetFitModels(self.args)
 
-        # TODO if not in any of them exit
-
-        self.model.initialize()
+        if self.model: self.model.initialize()
 
     def create_trainer(self):
-        self.model.create_trainer()
+        if self.model: self.model.create_trainer()
 
     def train(self):
-        self.logger.info(self.model)
-        self.model.train()
+        if self.model: self.model.train()
 
     def eval(self):
-        self.model.eval()
+        if self.model: self.model.eval()
 
     def get_model_type(self):
         return self.model_type
@@ -73,4 +69,4 @@ class Proxy():
         return self.model
 
     def run_already_exists(self):
-        return self.model.run_already_exists()
+        return self.model.run_already_exists() if self.model is not None else None

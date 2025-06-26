@@ -69,17 +69,22 @@ def main():
         p = Proxy(args)
         p.create_model()
 
-        if not p.run_already_exists():
+        if p.run_already_exists() is True:
             p.create_trainer()
             p.train()
             p.eval()
-        else:
+        elif p.run_already_exists() is False:
             p.model.delete_path()
             logging.warning("--------------------")
             logging.warning(f"Execution with the arguments {args} already exists!")
             logging.warning(f"")
             logging.warning(f"Run was skipped!")
             logging.warning("--------------------")
+        else:
+            logging.error("--------------------")
+            logging.error("Model type is not whitelisted!")
+            logging.error("Execution of the run was interrupted.")
+            logging.error("--------------------")
 
         #p.create_model("/leonardo/home/userexternal/mmock000/.cache/huggingface/hub/models--sentence-transformers--paraphrase-MiniLM-L6-v2/snapshots/c9a2bfebc254878aee8c3aca9e6844d5bbb102d1")
 
