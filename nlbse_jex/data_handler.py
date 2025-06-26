@@ -111,8 +111,6 @@ class DataHandler():
 
 
     def update_best_model(self):
-
-
         last_checkpoint_number = -1
         pattern = re.compile(r'^checkpoint-(\d+)$')
 
