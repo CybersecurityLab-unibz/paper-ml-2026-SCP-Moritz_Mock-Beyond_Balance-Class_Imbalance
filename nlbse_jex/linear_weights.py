@@ -14,11 +14,11 @@ class LinearWeights():
     def calculate_linear_weights(self):
         if self.type == "EW":
             self._EW()
-        if self.type == "ICF":
+        elif self.type == "ICF":
             self._ICF()
-        if self.type == "RBF":
+        elif self.type == "RBF":
             self._RBF()
-        if isinstance(self.type, types.FunctionType):
+        elif isinstance(self.type, types.FunctionType):
             self.class_weight_dicts = self.type(self.labels)
         else:
             self.logger.error("Not defined type of liner weights!")
