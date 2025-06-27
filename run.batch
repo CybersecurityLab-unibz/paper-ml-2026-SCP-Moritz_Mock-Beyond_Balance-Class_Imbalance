@@ -44,4 +44,4 @@ EOF
 
 nvidia-smi
 
-pip install . && nlbse_jex --weighted-loss ICF test_function.py --train data/NLBSE25/pharo/pharo_train.csv --test data/NLBSE25/pharo/pharo_test.csv --column-key-text combo --column-key-label labels --result-path results --model-path roberta-base
+pip install . && nlbse_jex --weighted-loss ICF --train data/NLBSE25/pharo/pharo_train.csv --test data/NLBSE25/pharo/pharo_test.csv --column-key-text combo --column-key-label labels --result-path results --model-path roberta-base
