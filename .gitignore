@@ -11,3 +11,5 @@ checkpoints
 .idea
 data
 results
+*.err
+*.out
