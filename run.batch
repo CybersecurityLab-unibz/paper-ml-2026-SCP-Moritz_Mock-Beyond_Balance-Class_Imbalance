@@ -12,7 +12,7 @@
 #SBATCH --account=ml-vuln
 #SBATCH --partition=gpu-low
 
-cd /home/clusterusers/momock/SATD-generation
+cd /home/clusterusers/momock/NLBSE_journal_extension
 module purge
 echo "Should be empty"
 module list
@@ -32,7 +32,7 @@ else:
 EOF
 )
 
-source  /data/users/momock/SATD-generation-env/bin/activate
+source  env/bin/activate
 echo $(python <<EOF
 import sys
 if sys.prefix == sys.base_prefix:
