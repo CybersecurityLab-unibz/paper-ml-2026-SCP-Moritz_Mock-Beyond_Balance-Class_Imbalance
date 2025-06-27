@@ -8,6 +8,7 @@ class LinearWeights():
         self.logger = logging.getLogger()
         self.type = type
         self.labels = labels
+        self.num_classes = len(self.data_train["label"][0])
         self.class_weight_dicts = []
         self.calculate_linear_weights()
 
@@ -24,8 +25,7 @@ class LinearWeights():
             self.logger.error("Not defined type of liner weights!")
 
     def _EW(self):
-        num_classes = self.labels.shape[1]
-        for i in range(num_classes):
+        for i in range(self.num_classes):
             self.class_weight_dicts.append({1: 0.5, 0: 0.5})
 
     def _ICF(self):
@@ -42,7 +42,7 @@ class LinearWeights():
 
         result = result * (1 / np.sum(result))
 
-        for i in range(labels_array.shape[1]):
+        for i in range(self.num_classes):
             self.class_weight_dicts.append({
                 1: round(float(result[i]), 3),
                 0: round(float(1 - result[i]), 3)
@@ -61,7 +61,7 @@ class LinearWeights():
         for i, idx in enumerate(sorted_values):
             result[idx] = round(float(sorted_frequencies[i]), 3)
 
-        for i in range(labels_array.shape[1]):
+        for i in range(self.num_classes):
             self.class_weight_dicts.append({
                 1: result[i],
                 0: round(float(1 - result[i]), 3)
