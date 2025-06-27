@@ -292,7 +292,6 @@ def parse_args():
     parser.add_argument("--column-key-text", type=str, required=True)
     parser.add_argument("--column-key-label", type=str, required=True)
     parser.add_argument("--save-model-instances", default="last", type=str, choices=["last", "all"])
-    parser.add_argument("--save-model-path", default=".", type=str)
     parser.add_argument("--model-path", default="sentence-transformers/paraphrase-MiniLM-L6-v2", type=str)
     parser.add_argument("--result-path", type=str, default=".")
     parser.add_argument("--maximise-model", type=str2bool, default=False)
