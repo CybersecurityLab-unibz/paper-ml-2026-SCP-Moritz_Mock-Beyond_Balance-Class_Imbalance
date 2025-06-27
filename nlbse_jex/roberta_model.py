@@ -169,6 +169,9 @@ class RoBERTaModels(DataHandler):
 
     def eval(self):
         metrics = self.trainer.evaluate()
+
+        metrics = {(k.replace("eval_", "") if k.startswith("eval_") else k): v for k, v in metrics.items()}
+
         self.logger.info(metrics)
         self.summarize_metrics(metrics)
         self.update_csv(metrics)
