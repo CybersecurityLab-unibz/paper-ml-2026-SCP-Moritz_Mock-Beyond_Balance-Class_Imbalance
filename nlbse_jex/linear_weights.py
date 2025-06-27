@@ -8,7 +8,7 @@ class LinearWeights():
         self.logger = logging.getLogger()
         self.type = type
         self.labels = labels
-        self.num_classes = len(self.data_train["label"][0])
+        self.num_classes = len(labels[0])
         self.class_weight_dicts = []
         self.calculate_linear_weights()
 
