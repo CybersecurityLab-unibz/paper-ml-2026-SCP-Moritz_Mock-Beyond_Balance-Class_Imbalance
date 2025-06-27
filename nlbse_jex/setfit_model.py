@@ -50,7 +50,7 @@ class SetFitModels(DataHandler):
             use_contrastive_head=False
         )
 
-        self.logger.info("Defined model!")
+        self.logger.info("Model Defined!")
 
     def create_trainer(self):
         args = TrainingArguments(
@@ -61,7 +61,7 @@ class SetFitModels(DataHandler):
             head_learning_rate=self.args.lr,
             l2_weight=self.args.weight_decay, # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
             save_strategy="epoch",
-            save_total_limit=1 if self.args.save_model_instances == "last" else self.args.epoch
+            save_total_limit=1
         )
 
         self.trainer = Trainer(
@@ -72,7 +72,7 @@ class SetFitModels(DataHandler):
             metric=compute_metrics
         )
 
-        self.logger.info("Created Trainer!")
+        self.logger.info("Trainer Created!")
 
     def train(self):
         self.trainer.train()
@@ -80,6 +80,6 @@ class SetFitModels(DataHandler):
         joblib.dump(self.model.model_head, os.path.join(self.output_path, "model_head.joblib"))
 
     def eval(self):
-        zeroshot_metrics = self.trainer.evaluate()
-        self.summarize_metrics(zeroshot_metrics)
-        self.update_csv(zeroshot_metrics)
+        metrics = self.trainer.evaluate()
+        self.summarize_metrics(metrics)
+        self.update_csv(metrics)

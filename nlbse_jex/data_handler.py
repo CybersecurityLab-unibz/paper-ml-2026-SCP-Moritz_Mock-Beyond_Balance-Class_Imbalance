@@ -5,6 +5,8 @@ import os
 import logging
 import pandas as pd
 import numpy as np
+import random
+import torch
 
 from nlbse_jex.linear_weights import LinearWeights
 from nlbse_jex.utils import copy_all_files
@@ -30,6 +32,22 @@ class DataHandler():
         self.dataset_name = None
         self.read_data()
         self.create_paths()
+        self.set_seed(42)
+
+
+    def set_seed(self, seed):
+        np.random.seed(seed)
+        random.seed(seed)
+
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+
+        torch.backends.cudnn.enabled = True
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+
 
     def create_paths(self):
         base_path = self.args.result_path
