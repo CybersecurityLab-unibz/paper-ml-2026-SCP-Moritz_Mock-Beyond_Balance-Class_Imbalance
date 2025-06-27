@@ -158,7 +158,7 @@ class RoBERTaModels(DataHandler):
             eval_dataset=self.data_test,
             custom_loss=self.custom_loss,
             data_collator=data_collator,
-            compute_metrics=self.compute_metrics_roberta
+            compute_metrics=compute_metrics_roberta
         )
 
         self.logger.info("Trainer Created!")
