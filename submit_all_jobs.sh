@@ -19,7 +19,7 @@ for LANGUAGE in "${LANGUAGES[@]}"; do
           for WD in "${WDS[@]}"; do
             ((count++))
             echo "Submitting job #$count: LANGUAGE=$LANGUAGE, LOSS=$LOSS, EPOCH=$EPOCH, BATCHSIZE=$BATCHSIZE, LR=$LR, WD=$WD"
-            #sbatch cineca.batch "$LANGUAGE" "$LOSS" "$EPOCH" "$BATCHSIZE" "$LR" "$WD"
+            sbatch cineca.batch "$LANGUAGE" "$LOSS" "$EPOCH" "$BATCHSIZE" "$LR" "$WD"
 
           done
         done
