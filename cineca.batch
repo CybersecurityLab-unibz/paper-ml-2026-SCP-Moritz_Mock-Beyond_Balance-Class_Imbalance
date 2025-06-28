@@ -50,6 +50,9 @@ nlbse_jex \
   --epoch ${EPOCH} \
   --train data/NLBSE25/${LANGUAGE}/${LANGUAGE}_train.csv \
   --test data/NLBSE25/${LANGUAGE}/${LANGUAGE}_test.csv \
+  --batch-size ${BATCHSIZE} \
+  --lr ${LR} \
+  --weight-decay ${WD} \
   --column-key-text combo \
   --column-key-label labels \
   --result-path /leonardo_work/IscrC_AGENT/NLBSE_journal/results \
