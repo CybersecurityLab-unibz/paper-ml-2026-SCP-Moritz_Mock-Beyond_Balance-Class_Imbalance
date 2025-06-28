@@ -156,6 +156,8 @@ class DataHandler():
 
 
     def run_already_exists(self):
+        self.logger.info(self.csv_path)
+        self.logger.info(os.path.exists(self.csv_path))
         if not os.path.exists(self.csv_path):
             return False
 
@@ -169,7 +171,7 @@ class DataHandler():
             (df["Learning Rate"] == self.args.lr) &
             (df["Weight Decay"] == self.args.weight_decay)
         ]
-
+        self.logger.info(df)
         return len(df) != 0
 
 
