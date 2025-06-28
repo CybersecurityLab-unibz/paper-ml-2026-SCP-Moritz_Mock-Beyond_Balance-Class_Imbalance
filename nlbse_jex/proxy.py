@@ -29,6 +29,9 @@ class Proxy():
                         try:
                             with open(config_path, "r") as f:
                                 config = json.load(f)
+                                self.logger.info(self.args)
+                                self.args.model_path = os.path.join(snapshots_dir, snapshots[0])
+                                self.logger.info(self.args)
                                 return config.get("model_type", "unknown")
                         except (json.JSONDecodeError, OSError):
                             return None
