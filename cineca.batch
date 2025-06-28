@@ -38,4 +38,16 @@ EOF
 
 nvidia-smi
 
-nlbse_jex --weighted-loss ICF --train data/NLBSE25/pharo/pharo_train.csv --test data/NLBSE25/pharo/pharo_test.csv --column-key-text combo --column-key-label labels --result-path results --model-path /leonardo/home/userexternal/mmock000/.cache/huggingface/hub/models--sentence-transformers--paraphrase-MiniLM-L6-v2/snapshots/c9a2bfebc254878aee8c3aca9e6844d5bbb102d1
+LANGUAGE=$1
+LOSS=$2
+EPOCH=$3
+
+nlbse_jex \
+  --weighted-loss ${LOSS} \
+  --epoch ${EPOCH} \
+  --train data/NLBSE25/${LANGUAGE}/${LANGUAGE}_train.csv \
+  --test data/NLBSE25/${LANGUAGE}/${LANGUAGE}_test.csv \
+  --column-key-text combo \
+  --column-key-label labels \
+  --result-path /leonardo_work/IscrC_AGENT/NLBSE_journal/results \
+  --model-path /leonardo/home/userexternal/mmock000/.cache/huggingface/hub/models--sentence-transformers--paraphrase-MiniLM-L6-v2/snapshots/c9a2bfebc254878aee8c3aca9e6844d5bbb102d1
