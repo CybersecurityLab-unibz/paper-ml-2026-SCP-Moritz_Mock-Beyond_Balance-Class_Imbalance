@@ -50,4 +50,4 @@ nlbse_jex \
   --column-key-text combo \
   --column-key-label labels \
   --result-path /leonardo_work/IscrC_AGENT/NLBSE_journal/results \
-  --model-path /leonardo/home/userexternal/mmock000/.cache/huggingface/hub/models--sentence-transformers--paraphrase-MiniLM-L6-v2/snapshots/c9a2bfebc254878aee8c3aca9e6844d5bbb102d1
+  --model-path sentence-transformers/paraphrase-MiniLM-L6-v2
