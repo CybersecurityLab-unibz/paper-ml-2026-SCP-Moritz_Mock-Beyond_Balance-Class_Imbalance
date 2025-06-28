@@ -41,6 +41,9 @@ nvidia-smi
 LANGUAGE=$1
 LOSS=$2
 EPOCH=$3
+BATCHSIZE=$4
+LR=$5
+WD=$6
 
 nlbse_jex \
   --weighted-loss ${LOSS} \
