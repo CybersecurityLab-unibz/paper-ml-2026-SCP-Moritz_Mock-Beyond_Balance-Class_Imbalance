@@ -169,8 +169,10 @@ class DataHandler():
             (df["Learning Rate"] == self.args.lr) &
             (df["Weight Decay"] == self.args.weight_decay)
         ]
+        
+        self.logger.info(df)
 
-        return len(df) == 0
+        return len(df) != 0
 
 
     def read_data(self):
