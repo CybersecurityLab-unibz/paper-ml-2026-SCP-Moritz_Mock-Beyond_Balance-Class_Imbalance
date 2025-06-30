@@ -83,3 +83,4 @@ class SetFitModels(DataHandler):
         metrics = self.trainer.evaluate()
         self.summarize_metrics(metrics)
         self.update_csv(metrics)
+
