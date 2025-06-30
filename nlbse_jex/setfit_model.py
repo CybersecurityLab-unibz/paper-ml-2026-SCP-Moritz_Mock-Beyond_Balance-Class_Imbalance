@@ -81,6 +81,7 @@ class SetFitModels(DataHandler):
 
     def eval(self):
         metrics = self.trainer.evaluate()
+        self.logger.info(metrics)
         self.summarize_metrics(metrics)
         self.update_csv(metrics)
 

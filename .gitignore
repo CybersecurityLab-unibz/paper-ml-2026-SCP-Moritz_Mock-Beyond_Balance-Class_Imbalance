@@ -11,5 +11,6 @@ checkpoints
 .idea
 data
 results
+logs
 *.err
 *.out

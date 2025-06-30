@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=Test_DeepSeeker # job name in accounting
-#SBATCH --output=%j.out # the standard output is written to this file
-#SBATCH --error=%j.err # the standard error is written to this file
+#SBATCH --output=/data/users/momock/NLBSE_JEX/logs/%j.out # the standard output is written to this file
+#SBATCH --error=/data/users/momock/NLBSE_JEX/logs/%j.err # the standard error is written to this file
 #SBATCH --partition=gpu-low #cluster partition to use, you may not have access to this one
 #SBATCH --ntasks-per-node=4 # use four cores
 #SBATCH --nodes=1 # use a single cluster node
@@ -44,4 +44,22 @@ EOF
 
 nvidia-smi
 
-pip install . && nlbse_jex --weighted-loss ICF --train data/NLBSE25/pharo/pharo_train.csv --test data/NLBSE25/pharo/pharo_test.csv --column-key-text combo --column-key-label labels --result-path results --model-path roberta-base
+LANGUAGE=$1
+LOSS=$2
+EPOCH=$3
+BATCHSIZE=$4
+LR=$5
+WD=$6
+
+nlbse_jex \
+  --weighted-loss ${LOSS} \
+  --epoch ${EPOCH} \
+  --train data/NLBSE25/${LANGUAGE}/${LANGUAGE}_train.csv \
+  --test data/NLBSE25/${LANGUAGE}/${LANGUAGE}_test.csv \
+  --batch-size ${BATCHSIZE} \
+  --lr ${LR} \
+  --weight-decay ${WD} \
+  --column-key-text combo \
+  --column-key-label labels \
+  --result-path /data/users/momock/NLBSE_JEX/results \
+  --model-path sentence-transformers/paraphrase-MiniLM-L6-v2
