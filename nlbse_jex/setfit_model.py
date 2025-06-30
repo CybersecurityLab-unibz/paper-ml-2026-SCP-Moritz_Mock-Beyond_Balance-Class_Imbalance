@@ -84,3 +84,4 @@ class SetFitModels(DataHandler):
         self.logger.info(metrics)
         self.summarize_metrics(metrics)
         self.update_csv(metrics)
+
