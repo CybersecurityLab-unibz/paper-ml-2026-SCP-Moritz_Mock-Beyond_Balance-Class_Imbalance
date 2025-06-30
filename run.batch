@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH --job-name=Test_DeepSeeker # job name in accounting
-#SBATCH --output=/data/users/momock/NLBSE_JEX/%j.out # the standard output is written to this file
-#SBATCH --error=/data/users/momock/NLBSE_JEX/%j.err # the standard error is written to this file
+#SBATCH --output=/data/users/momock/NLBSE_JEX/logs/%j.out # the standard output is written to this file
+#SBATCH --error=/data/users/momock/NLBSE_JEX/logs/%j.err # the standard error is written to this file
 #SBATCH --partition=gpu-low #cluster partition to use, you may not have access to this one
 #SBATCH --ntasks-per-node=4 # use four cores
 #SBATCH --nodes=1 # use a single cluster node
