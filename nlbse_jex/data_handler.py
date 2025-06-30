@@ -79,7 +79,7 @@ class DataHandler():
             os.makedirs(self.logs_path, exist_ok=True)
 
     def summarize_metrics(self, metrics):
-        for i in range(7):  # num classes
+        for i in range(self.num_classes):
             f1 = metrics.get(f"class_{i}_f1")
             prec = metrics.get(f"class_{i}_precision")
             rec = metrics.get(f"class_{i}_recall")
