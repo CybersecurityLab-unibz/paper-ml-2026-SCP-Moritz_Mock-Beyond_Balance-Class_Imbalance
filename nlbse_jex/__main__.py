@@ -64,12 +64,11 @@ def main():
         p = Proxy(args)
         p.create_model()
 
-        if p.run_already_exists() is not True: # TODO remove not, is just as a placeholder
+        if p.run_already_exists() is False:
             p.create_trainer()
             p.train()
             p.eval()
-            logging.info("----------- dummy ------------")
-        elif p.run_already_exists() is False:
+        elif p.run_already_exists() is True:
             p.model.delete_path()
             logging.warning("--------------------")
             logging.warning(f"Execution with the arguments {args} already exists!")

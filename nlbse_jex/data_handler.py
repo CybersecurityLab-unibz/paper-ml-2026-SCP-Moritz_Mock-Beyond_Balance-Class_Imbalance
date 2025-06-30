@@ -170,7 +170,7 @@ class DataHandler():
             (df["Weight Decay"] == self.args.weight_decay)
         ]
 
-        return len(df) != 0
+        return len(df) == 0
 
 
     def read_data(self):
