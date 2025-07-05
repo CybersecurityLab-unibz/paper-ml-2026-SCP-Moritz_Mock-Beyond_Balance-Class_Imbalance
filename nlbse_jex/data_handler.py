@@ -67,7 +67,8 @@ class DataHandler():
                 str(self.args.epoch),
                 str(self.args.lr),
                 str(self.args.weight_decay),
-                self.args.weighted_loss_strategy if not isinstance(self.args.weighted_loss_strategy, types.FunctionType) else self.args.weighted_loss_strategy.__name__
+                self.args.weighted_loss_strategy if not isinstance(self.args.weighted_loss_strategy, types.FunctionType) else self.args.weighted_loss_strategy.__name__,
+                str(self.args.freeze_embeddings)
             ])
 
             self.output_path = os.path.join(base_path, model_path, self.dataset_name, parameters, "checkpoints")
@@ -95,6 +96,7 @@ class DataHandler():
                 "Epoch",
                 "Learning Rate",
                 "Weight Decay",
+                "Freeze Embeddings",
                 "Average Precision",
                 "Average Recall",
                 "Average F1"
@@ -117,6 +119,7 @@ class DataHandler():
                   self.args.epoch,
                   self.args.lr,
                   self.args.weight_decay,
+                  self.args.freeze_embeddings,
                   avg_precision,
                   avg_recall,
                   avg_f1
@@ -167,7 +170,8 @@ class DataHandler():
             (df["Batch Size"] == self.args.batch_size) &
             (df["Epoch"] == self.args.epoch) &
             (df["Learning Rate"] == self.args.lr) &
-            (df["Weight Decay"] == self.args.weight_decay)
+            (df["Weight Decay"] == self.args.weight_decay) &
+            (df["Freeze Embeddings"].astype(str).str.lower().map({"true": True, "false": False}) == self.args.freeze_embeddings)
         ]
         
         self.logger.info(df)
@@ -213,6 +217,7 @@ class DataHandler():
         self.args.epoch = int(best_run["Epoch"])
         self.args.lr = float(best_run["Learning Rate"])
         self.args.weight_decay = float(best_run["Weight Decay"])
+        self.args.freeze_embeddings = bool(best_run["Freeze Embeddings"])
 
 
     def calculate_weights(self):
