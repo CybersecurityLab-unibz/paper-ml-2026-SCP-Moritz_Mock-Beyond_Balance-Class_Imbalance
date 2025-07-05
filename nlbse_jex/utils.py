@@ -295,6 +295,7 @@ def parse_args():
     parser.add_argument("--model-path", default="sentence-transformers/paraphrase-MiniLM-L6-v2", type=str)
     parser.add_argument("--result-path", type=str, default=".")
     parser.add_argument("--maximise-model", type=str2bool, default=False)
+    parser.add_argument("--freeze-embeddings", type=str2bool, default=False)
 
 
     return parser
