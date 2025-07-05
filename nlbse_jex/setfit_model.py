@@ -169,7 +169,7 @@ class SetFitModels(DataHandler):
             batch_size=self.args.batch_size,
             num_epochs=self.args.epoch,
             head_learning_rate=self.args.lr,
-            l2_weight=self.args.weight_decay, # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
+            #l2_weight=self.args.weight_decay, # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
             save_strategy="epoch",
             save_total_limit=1
         )
@@ -177,7 +177,7 @@ class SetFitModels(DataHandler):
         self.trainer = CustomTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train.select(range(50)), #TODO remove range
+            train_dataset=self.data_train, #.select(range(50)), #TODO remove range
             eval_dataset=self.data_test,
             metric=compute_metrics,
             freeze_embeddings=self.args.freeze_embeddings
