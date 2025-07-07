@@ -50,6 +50,7 @@ EPOCH=$3
 BATCHSIZE=$4
 LR=$5
 WD=$6
+MODEL=$7
 
 nlbse_jex \
   --weighted-loss ${LOSS} \
@@ -62,4 +63,4 @@ nlbse_jex \
   --column-key-text combo \
   --column-key-label labels \
   --result-path /data/users/momock/NLBSE_JEX/results \
-  --model-path sentence-transformers/paraphrase-MiniLM-L6-v2
+  --model-path ${MODEL}
