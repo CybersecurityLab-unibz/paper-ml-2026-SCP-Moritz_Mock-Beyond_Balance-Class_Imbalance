@@ -177,7 +177,8 @@ class SetFitModels(DataHandler):
             head_learning_rate=self.args.lr,
             l2_weight=self.args.weight_decay, # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
             save_strategy="epoch",
-            save_total_limit=1
+            save_total_limit=1,
+            num_iterations=20 # as default in setfit 1.0.0
         )
 
         self.trainer = CustomTrainer(
