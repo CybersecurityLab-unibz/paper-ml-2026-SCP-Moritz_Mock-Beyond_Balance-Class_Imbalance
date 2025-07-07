@@ -3,12 +3,13 @@ from setfit import SetFitModel, Trainer, TrainingArguments, SetFitHead
 from sentence_transformers import SentenceTransformer
 from nlbse_jex.data_handler import DataHandler
 from nlbse_jex.utils import compute_metrics
-import joblib
 import warnings
-from typing import Dict, List, Literal, Optional, Set, Tuple, Union, Any
+from typing import Dict, List, Optional, Union, Any
 import torch
 from torch import nn
 from tqdm.auto import tqdm, trange
+import yaml
+
 
 class CustomTrainer(Trainer):
     def __init__(self, freeze_embeddings=False, **kwargs):
@@ -149,7 +150,12 @@ class SetFitModels(DataHandler):
     def initialize(self):
 
         model_body = SentenceTransformer(self.model_id)
-        model_head = SetFitHead(in_features=384, out_features=self.num_classes, multitarget=True)
+
+        model_head = SetFitHead(
+            in_features=model_body.get_sentence_embedding_dimension(),
+            out_features=self.num_classes,
+            multitarget=True
+        )
 
         self.model = CustomSetFitModel(
             model_body=model_body,
@@ -188,7 +194,9 @@ class SetFitModels(DataHandler):
     def train(self):
         self.trainer.train()
         self.model.model_body.save(os.path.join(self.output_path, "model_body"))
-        joblib.dump(self.model.model_head, os.path.join(self.output_path, "model_head.joblib"))
+        torch.save(self.model.model_head.state_dict(), os.path.join(self.output_path, "model_head.pt"))
+        with open(os.path.join(self.output_path, "training_args.yaml"), "w") as f:
+            yaml.dump(vars(self.args), f)
 
     def eval(self):
         metrics = self.trainer.evaluate()
