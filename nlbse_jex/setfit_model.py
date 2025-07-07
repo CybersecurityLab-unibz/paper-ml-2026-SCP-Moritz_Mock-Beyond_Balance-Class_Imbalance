@@ -175,7 +175,7 @@ class SetFitModels(DataHandler):
             batch_size=self.args.batch_size,
             num_epochs=self.args.epoch,
             head_learning_rate=self.args.lr,
-            #l2_weight=self.args.weight_decay, # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
+            l2_weight=self.args.weight_decay, # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
             save_strategy="epoch",
             save_total_limit=1
         )
