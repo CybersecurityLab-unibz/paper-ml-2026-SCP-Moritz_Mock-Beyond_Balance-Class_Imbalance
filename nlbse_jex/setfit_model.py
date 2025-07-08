@@ -66,7 +66,6 @@ class CustomTrainer(Trainer):
 class CustomSetFitModel(SetFitModel):
     def __init__(self, *args, custom_loss=None, **kwargs):
         super().__init__(*args, **kwargs)
-        print(custom_loss)
         self.custom_loss = torch.tensor(custom_loss, device=self.device) # take device from parent class
 
     def fit(
@@ -108,7 +107,7 @@ class CustomSetFitModel(SetFitModel):
             self.freeze("body")
 
         dataloader = self._prepare_dataloader(x_train, y_train, batch_size, max_length)
-        criterion = nn.BCEWithLogitsLoss(reduction="none") # changed from self.model_head.get_loss_fn()
+        criterion = nn.CrossEntropyLoss(weight=self.custom_loss) # changed from self.model_head.get_loss_fn()
         optimizer = self._prepare_optimizer(head_learning_rate, body_learning_rate, l2_weight)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
         for epoch_idx in trange(num_epochs, desc="Epoch", disable=not show_progress_bar):
@@ -128,12 +127,7 @@ class CustomSetFitModel(SetFitModel):
                 outputs = self.model_head(outputs)
                 logits = outputs["logits"]
 
-                print(criterion(logits, labels).mean(dim=0))
-                print(criterion(logits, labels).mean(dim=0) * self.custom_loss)
-                print((criterion(logits, labels).mean(dim=0) * self.custom_loss).mean())
-
-                loss: torch.Tensor = criterion(logits, labels).mean(dim=0) * self.custom_loss # added the multiplication
-                loss: torch.Tensor = loss.mean() # added reduction
+                loss: torch.Tensor = criterion(logits, labels)
                 loss.backward()
                 optimizer.step()
 
@@ -160,7 +154,7 @@ class SetFitModels(DataHandler):
         model_head = SetFitHead(
             in_features=model_body.get_sentence_embedding_dimension(),
             out_features=self.num_classes,
-            multitarget=True
+            multitarget=False
         )
 
         self.model = CustomSetFitModel(

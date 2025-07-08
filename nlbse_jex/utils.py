@@ -216,6 +216,7 @@ def compute_metrics(preds, labels):
         labels = np.array(labels)
 
     num_classes = labels.shape[1]
+    preds = np.eye(num_classes)[preds]
     class_metrics = {}
 
     for class_idx in range(num_classes):
