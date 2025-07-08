@@ -66,6 +66,7 @@ class CustomTrainer(Trainer):
 class CustomSetFitModel(SetFitModel):
     def __init__(self, *args, custom_loss=None, **kwargs):
         super().__init__(*args, **kwargs)
+        print(custom_loss)
         self.custom_loss = torch.tensor(custom_loss, device=self.device) # take device from parent class
 
     def fit(
@@ -126,8 +127,13 @@ class CustomSetFitModel(SetFitModel):
                     )
                 outputs = self.model_head(outputs)
                 logits = outputs["logits"]
+
+                print(criterion(logits, labels).mean(dim=0))
+                print(criterion(logits, labels).mean(dim=0) * self.custom_loss)
+                print((criterion(logits, labels).mean(dim=0) * self.custom_loss).mean())
+
                 loss: torch.Tensor = criterion(logits, labels).mean(dim=0) * self.custom_loss # added the multiplication
-                loss = loss.mean() # added reduction
+                loss: torch.Tensor = loss.mean() # added reduction
                 loss.backward()
                 optimizer.step()
 
@@ -184,7 +190,7 @@ class SetFitModels(DataHandler):
         self.trainer = CustomTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train, #.select(range(50)), #TODO remove range
+            train_dataset=self.data_train.select(range(50)), #TODO remove range
             eval_dataset=self.data_test,
             metric=compute_metrics,
             freeze_embeddings=self.args.freeze_embeddings
