@@ -8,7 +8,7 @@
 #SBATCH --nodes=1 # use a single cluster node
 #SBATCH --mem=80G
 #SBATCH --time=21-0:00:00
-#SBATCH --gres=gpu:v100
+#SBATCH --gres=gpu:v100 #gpu:a100-sxm4-80gb
 #SBATCH --account=ml-vuln
 #SBATCH --partition=gpu-low
 
@@ -53,7 +53,7 @@ nlbse_jex \
   --epoch 5 10 \
   --train data/${DATASET}/${LANGUAGE}/${LANGUAGE}_train.csv \
   --test data/${DATASET}/${LANGUAGE}/${LANGUAGE}_test.csv \
-  --batch-size 1 2 4 8 16 32 \
+  --batch-size 8 16 32 \
   --lr 1e-2 1e-3 \
   --weight-decay 0 0.01 0.001 \
   --column-key-text combo \

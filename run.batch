@@ -63,4 +63,4 @@ nlbse_jex \
   --column-key-text combo \
   --column-key-label labels \
   --result-path /data/users/momock/NLBSE_JEX/results \
-  --model-path ${MODEL}
+  --model-path sentence-transformers/paraphrase-MiniLM-L6-v2
