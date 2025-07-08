@@ -26,7 +26,7 @@ class LinearWeights():
 
     def _EW(self):
         for i in range(self.num_classes):
-            self.class_weight_dicts.append({1: 0.5, 0: 0.5})
+            self.class_weight_dicts.append({1: 1, 0: 0})
 
     def _ICF(self):
         labels_array = np.array(self.labels)
