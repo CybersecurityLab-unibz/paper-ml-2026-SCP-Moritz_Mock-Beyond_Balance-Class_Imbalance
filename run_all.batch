@@ -6,11 +6,11 @@
 #SBATCH --partition=gpu-low #cluster partition to use, you may not have access to this one
 #SBATCH --ntasks-per-node=4 # use four cores
 #SBATCH --nodes=1 # use a single cluster node
-#SBATCH --mem=80G
+#SBATCH --mem=10G
 #SBATCH --time=21-0:00:00
-#SBATCH --gres=gpu:v100 #gpu:a100-sxm4-80gb
+#SBATCH --gres=gpu:a100-sxm4-80gb
 #SBATCH --account=ml-vuln
-#SBATCH --partition=gpu-low
+#SBATCH --partition=gpu-pre
 
 cd /home/clusterusers/momock/NLBSE_journal_extension
 module purge
