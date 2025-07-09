@@ -49,9 +49,6 @@ class Proxy():
         self.model_path = self.args.model_path
         self.model_type = self._type_of_model()
 
-        self.logger.info(self.model_path)
-        self.logger.info(self.model_type)
-
         if self.model_type in self.roberta_whitelist:
             self.model = RoBERTaModels(self.args)
         elif self.model_type in self.setfit_whitelist:
