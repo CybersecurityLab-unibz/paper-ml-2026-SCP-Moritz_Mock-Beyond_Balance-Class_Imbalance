@@ -22,7 +22,8 @@ dependencies = [
     "pyyaml==6.0.2",
     "setfit==1.1.2",
     "huggingface-hub==0.31.4",
-    "transformers==4.51.3"
+    "transformers==4.51.3",
+    "datasets==3.6.0"
 ]
 
 [project.scripts]

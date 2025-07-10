@@ -1,5 +1,5 @@
 import os
-from setfit import SetFitModel, Trainer, TrainingArguments, SetFitHead
+import setfit
 from sentence_transformers import SentenceTransformer
 from nlbse_jex.data_handler import DataHandler
 from nlbse_jex.utils import compute_metrics
@@ -11,14 +11,14 @@ from tqdm.auto import tqdm, trange
 import yaml
 
 
-class CustomTrainer(Trainer):
+class CustomTrainer(setfit.Trainer):
     def __init__(self, freeze_embeddings=False, **kwargs):
         super().__init__(**kwargs)
         self.freeze_embeddings = freeze_embeddings
 
     def train(
         self,
-        args: Optional[TrainingArguments] = None,
+        args: Optional[setfit.TrainingArguments] = None,
         trial: Optional[Union["optuna.Trial", Dict[str, Any]]] = None,
         **kwargs,
     ) -> None:
@@ -43,7 +43,7 @@ class CustomTrainer(Trainer):
         if trial:  # Trial and model initialization
             self._hp_search_setup(trial)  # sets trainer parameters and initializes model
 
-        args = args or self.args or TrainingArguments()
+        args = args or self.args or setfit.TrainingArguments()
 
         if self.train_dataset is None:
             raise ValueError(
@@ -63,7 +63,7 @@ class CustomTrainer(Trainer):
         self.train_classifier(*train_parameters, args=args)
 
 
-class CustomSetFitModel(SetFitModel):
+class CustomSetFitModel(setfit.SetFitModel):
     def __init__(self, *args, custom_loss=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.custom_loss = torch.tensor(custom_loss, device=self.device) # take device from parent class
@@ -151,7 +151,7 @@ class SetFitModels(DataHandler):
 
         model_body = SentenceTransformer(self.model_id)
 
-        model_head = SetFitHead(
+        model_head = setfit.SetFitHead(
             in_features=model_body.get_sentence_embedding_dimension(),
             out_features=self.num_classes,
             multitarget=False
@@ -169,7 +169,7 @@ class SetFitModels(DataHandler):
         self.logger.info("Model Defined!")
 
     def create_trainer(self):
-        args = TrainingArguments(
+        args = setfit.TrainingArguments(
             output_dir=self.output_path,
             logging_dir=self.logs_path,
             batch_size=self.args.batch_size,
