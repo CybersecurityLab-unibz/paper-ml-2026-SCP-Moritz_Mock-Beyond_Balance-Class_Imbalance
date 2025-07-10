@@ -103,7 +103,8 @@ class CustomSetFitModel(setfit.SetFitModel):
         """
         self.model_body.train()
         self.model_head.train()
-        if not end_to_end:
+        if not end_to_end: 
+            
             self.freeze("body")
 
         dataloader = self._prepare_dataloader(x_train, y_train, batch_size, max_length)
