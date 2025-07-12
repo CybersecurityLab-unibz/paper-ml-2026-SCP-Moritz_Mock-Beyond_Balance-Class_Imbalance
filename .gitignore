@@ -14,3 +14,7 @@ results
 logs
 *.err
 *.out
+
+# thomas
+myenv
+run_all_t.batch
