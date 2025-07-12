@@ -3,6 +3,7 @@ import setfit
 from sentence_transformers import SentenceTransformer
 from nlbse_jex.data_handler import DataHandler
 from nlbse_jex.utils import compute_metrics
+from nlbse_jex.dynamic_weights import FAMO
 import warnings
 from typing import Dict, List, Optional, Union, Any
 import torch
@@ -64,9 +65,18 @@ class CustomTrainer(setfit.Trainer):
 
 
 class CustomSetFitModel(setfit.SetFitModel):
-    def __init__(self, *args, custom_loss=None, **kwargs):
+    def __init__(self, *args, custom_loss_weight=None, custom_loss_name='EW',**kwargs):
         super().__init__(*args, **kwargs)
-        self.custom_loss = torch.tensor(custom_loss, device=self.device) # take device from parent class
+        self.custom_loss_name = custom_loss_name
+        self.custom_loss_weight = torch.tensor(custom_loss_weight, device=self.device) # take device from parent class
+
+# TODO how to mange custum weiting methods?
+    def loss_selection(self):
+        if self.custom_loss_name in ["EW","ICF","RBF"]:
+            loss = nn.CrossEntropyLoss(weight=self.custom_loss_weight) # changed from self.model_head.get_loss_fn()
+        elif self.custom_loss_name in ["FAMO"]:
+            loss = torch.nn.BCEWithLogitsLoss(reduction="none").mean(0)
+        return loss
 
     def fit(
         self,
@@ -107,9 +117,11 @@ class CustomSetFitModel(setfit.SetFitModel):
             self.freeze("body")
 
         dataloader = self._prepare_dataloader(x_train, y_train, batch_size, max_length)
-        criterion = nn.CrossEntropyLoss(weight=self.custom_loss) # changed from self.model_head.get_loss_fn()
+        criterion = self.loss_selection() # changed from self.model_head.get_loss_fn()
         optimizer = self._prepare_optimizer(head_learning_rate, body_learning_rate, l2_weight)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
+        if self.custom_loss_name == 'FAMO':
+            weight_opt = FAMO(n_class=len(self.custom_loss_weight), device=self.device)
         for epoch_idx in trange(num_epochs, desc="Epoch", disable=not show_progress_bar):
             for batch in tqdm(dataloader, desc="Iteration", disable=not show_progress_bar, leave=False):
                 features, labels = batch
@@ -128,8 +140,16 @@ class CustomSetFitModel(setfit.SetFitModel):
                 logits = outputs["logits"]
 
                 loss: torch.Tensor = criterion(logits, labels)
-                loss.backward()
+                if self.custom_loss_name=='FAMO':
+                    weight_opt.backward(loss)
+                else:
+                    loss.backward()
                 optimizer.step()
+
+                if self.custom_loss_name == 'FAMO':
+                    with torch.no_grad():
+                        new_loss = criterion(logits, labels)
+                        weight_opt.update(new_loss)
 
             scheduler.step()
 
@@ -163,7 +183,8 @@ class SetFitModels(DataHandler):
             multi_target_strategy="multi-output",
             use_differentiable_head=True,
             use_contrastive_head=False,
-            custom_loss=[weight[1] for weight in self.class_weight_dicts]
+            custom_loss_weight=[weight[1] for weight in self.class_weight_dicts],
+            custom_loss_name=self.args.weighted_loss_strategy,
         )
 
         self.logger.info("Model Defined!")
