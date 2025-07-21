@@ -123,8 +123,8 @@ def str2bool(v):
     else:
         raise ValueError('Boolean value expected.')
 
-def generate_base_config(path):
-    data = {
+def generate_base_config(path, data=None):
+    data = data if data is not None else {
         'epoch': [1, 2, 5, 10],
         'weighted_loss_strategy': ['EW']
     }
@@ -150,17 +150,8 @@ def validate_and_cast_config(yaml_config, parser):
         expected_type = action.type
         nargs = action.nargs
 
-        # Handle boolean flags (store_true / store_false)
-        if isinstance(action, argparse._StoreTrueAction):
-            if isinstance(value, bool):
-                validated_config[key] = value
-            elif isinstance(value, (int, str)):
-                validated_config[key] = str(value).lower() in ['true', '1', 'yes', 'on']
-            else:
-                raise ValueError(f"Invalid type for key '{key}': expected boolean-like value")
-
         # Handle nargs / list-type args
-        elif nargs is not None:
+        if nargs is not None:
             if not isinstance(value, list):
                 raise ValueError(f"Expected a list for argument '{key}', but got {type(value).__name__}")
 
@@ -170,8 +161,6 @@ def validate_and_cast_config(yaml_config, parser):
                     validated_config[key] = [expected_type(v) for v in value]
                 except Exception as e:
                     raise ValueError(f"Type error in list for key '{key}': expected elements of type {expected_type.__name__}, got {value}")
-            else:
-                validated_config[key] = value  # No type specified, accept as-is
 
         # Handle normal scalar args
         elif expected_type is not None:
@@ -179,8 +168,6 @@ def validate_and_cast_config(yaml_config, parser):
                 validated_config[key] = expected_type(value)
             except Exception as e:
                 raise ValueError(f"Type error for key '{key}': expected {expected_type.__name__}, got {value} ({type(value).__name__})")
-        else:
-            validated_config[key] = value
 
     return validated_config
 
@@ -273,7 +260,7 @@ def find_function_callable(candidates, function_name):
         if isinstance(candidate, types.FunctionType) and candidate.__name__ == function_name:
             return candidate
 
-    raise ValueError(f"The costum function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'.")
+    raise ValueError(f"The costume function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'.")
 
 
 def positive_value(input_value):
