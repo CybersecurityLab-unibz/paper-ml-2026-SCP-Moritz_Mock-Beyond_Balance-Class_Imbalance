@@ -14,3 +14,4 @@ results
 logs
 *.err
 *.out
+.coverage
