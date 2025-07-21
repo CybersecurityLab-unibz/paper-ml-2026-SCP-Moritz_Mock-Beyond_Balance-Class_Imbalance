@@ -1,4 +1,3 @@
-import argparse
 import importlib.util
 import os
 import ast
@@ -9,6 +8,7 @@ import numpy as np
 import shutil
 import types
 import logging
+import argparse
 
 def read_files_weighted_loss_strategy(args):
     args_ok = {
@@ -198,10 +198,11 @@ def merge_config_with_args(yaml_config, cli_args, parser):
 
 def read_config(args, parser):
     raw_yaml = load_yaml_config(args.config_path)
-    logging.info(raw_yaml)
+    if raw_yaml is None:
+        logging.info(f"Provided file ({raw_yaml}) is empty, please specify a configuration!")
+        return args
     yaml_config = validate_and_cast_config(raw_yaml, parser)
-    logging.info(raw_yaml)
-    return merge_config_with_args(yaml_config, args, parser)
+    return argparse.Namespace(**merge_config_with_args(yaml_config, args, parser))
 
 
 def compute_metrics(preds, labels):
@@ -275,6 +276,11 @@ def find_function_callable(candidates, function_name):
     raise ValueError(f"The costum function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'.")
 
 
+def positive_value(input_value):
+    casted_value = int(input_value)
+    if casted_value <= 0:
+        raise argparse.ArgumentTypeError(f"{input_value} is not a positive integer")
+    return input_value
 
 
 def parse_args():
@@ -283,10 +289,10 @@ def parse_args():
     parser.add_argument("--generate-base-config", type=str2bool, default=False)
     parser.add_argument("--config-path", type=str, default=None)
     parser.add_argument("--weighted-loss-strategy", nargs="*", type=str, default=["EW", "test_function.py"])
-    parser.add_argument("--batch-size", nargs="*", type=int, default=[32])
-    parser.add_argument("--epoch", nargs="*", type=int, default=[5])
-    parser.add_argument("--lr", nargs="*", type=float, default=[1e-2])
-    parser.add_argument("--weight-decay", nargs="*", type=float, default=[0])
+    parser.add_argument("--batch-size", nargs="*", type=positive_value, default=[32])
+    parser.add_argument("--epoch", nargs="*", type=positive_value, default=[5])
+    parser.add_argument("--lr", nargs="*", type=positive_value, default=[1e-2])
+    parser.add_argument("--weight-decay", nargs="*", type=positive_value, default=[0])
     parser.add_argument("--train", required=True, type=str)
     parser.add_argument("--val", default=None, type=str)
     parser.add_argument("--test", required=True, type=str)
