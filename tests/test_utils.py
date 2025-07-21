@@ -34,8 +34,9 @@ class TestUtils(unittest.TestCase):
         open(path, 'w').close()
         parser = parse_args()
         args = parser.parse_args()
+        args.config_path = path
         yml = read_config(args, parser)
-        self.assertEqual(args, args)
+        self.assertEqual(args, yml)
         os.remove(path)
 
     def test_read_config_invalid_config(self):
