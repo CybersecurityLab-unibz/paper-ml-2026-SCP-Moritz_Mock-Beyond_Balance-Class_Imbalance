@@ -3,18 +3,18 @@ from nlbse_jex.utils import read_config
 from nlbse_jex.utils import parse_args
 from unittest.mock import patch
 import os
-import argparse
 
 class TestUtils(unittest.TestCase):
 
     def setUp(self):
+        self.path_prefix = os.getcwd() if os.getcwd().split("/")[-1] == "tests" else os.path.join(os.getcwd(), "tests")
         self.patcher = patch('sys.argv', [
             'program_name',
             '--train', 'dummy_data/pathon_train.csv',
             '--test', 'dummy_data/pathon_test.csv',
             '--column-key-text', 'combo',
             '--column-key-label', 'labels',
-            '--config-path', 'tests/dummy_data/dummy_config.yml'
+            '--config-path', f'{self.path_prefix}/dummy_data/dummy_config.yml'
         ])
 
         self.patcher.start()
@@ -25,12 +25,12 @@ class TestUtils(unittest.TestCase):
     def test_read_config_does_not_exists(self):
         parser = parse_args()
         args = parser.parse_args()
-        args.config_path = "tests/dummy_data/does_not_exists.yml"
+        args.config_path = f'{self.path_prefix}/dummy_data/does_not_exists.yml'
         with self.assertRaises(FileNotFoundError):
             read_config(args, parser)
 
     def test_read_config_empty_config(self):
-        path = "tests/dummy_data/dummy_config_empty.yml"
+        path = f'{self.path_prefix}/dummy_data/dummy_config_empty.yml'
         open(path, 'w').close()
         parser = parse_args()
         args = parser.parse_args()
@@ -42,14 +42,14 @@ class TestUtils(unittest.TestCase):
     def test_read_config_invalid_config(self):
         parser = parse_args()
         args = parser.parse_args()
-        args.config_path = "tests/dummy_data/dummy_config_invalid_key.yml"
+        args.config_path = f'{self.path_prefix}/dummy_data/dummy_config_invalid_key.yml'
         with self.assertRaises(ValueError):
             read_config(args, parser)
 
     def test_read_config_invalid_value(self):
         parser = parse_args()
         args = parser.parse_args()
-        args.config_path = "tests/dummy_data/dummy_config_invalid_value.yml"
+        args.config_path = f'{self.path_prefix}/dummy_data/dummy_config_invalid_value.yml'
         with self.assertRaises(ValueError):
             read_config(args, parser)
 
