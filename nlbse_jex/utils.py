@@ -207,6 +207,9 @@ def compute_metrics(preds, labels):
     preds = np.eye(num_classes)[preds]
     class_metrics = {}
 
+    print(labels)
+    print(preds)
+
     for class_idx in range(num_classes):
         tp = np.sum((preds[:, class_idx] == 1) & (labels[:, class_idx] == 1))
         fp = np.sum((preds[:, class_idx] == 1) & (labels[:, class_idx] == 0))

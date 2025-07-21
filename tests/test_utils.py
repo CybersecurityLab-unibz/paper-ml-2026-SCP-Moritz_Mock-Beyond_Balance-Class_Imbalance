@@ -148,20 +148,20 @@ class TestUtils(unittest.TestCase):
 
     def test_compute_metrics(self):
         labels = [[0, 1], [0, 1]]
-        preds = [[0, 1], [1, 0]]
+        preds = [1, 0]
         metrics = compute_metrics(preds, labels)
 
         self.assertEqual(0, metrics["class_0_true_positives"])
-        self.assertEqual(2, metrics["class_0_false_positives"])
-        self.assertEqual(2, metrics["class_0_true_negatives"])
+        self.assertEqual(1, metrics["class_0_false_positives"])
+        self.assertEqual(1, metrics["class_0_true_negatives"])
         self.assertEqual(0, metrics["class_0_false_negatives"])
         self.assertEqual(0, metrics["class_0_precision"])
         self.assertEqual(0, metrics["class_0_recall"])
         self.assertEqual(0, metrics["class_0_f1"])
-        self.assertEqual(2, metrics["class_1_true_positives"])
+        self.assertEqual(1, metrics["class_1_true_positives"])
         self.assertEqual(0, metrics["class_1_false_positives"])
         self.assertEqual(0, metrics["class_1_true_negatives"])
-        self.assertEqual(2, metrics["class_1_false_negatives"])
+        self.assertEqual(1, metrics["class_1_false_negatives"])
         self.assertEqual(1, metrics["class_1_precision"])
         self.assertEqual(0.5, metrics["class_1_recall"])
         self.assertEqual(0.6666666666666666, metrics["class_1_f1"])
