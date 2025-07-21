@@ -1,6 +1,6 @@
 import unittest
 from nlbse_jex.utils import read_config, str2bool, read_files_weighted_loss_strategy, find_function_callable, \
-    get_first_function_name, compute_metrics
+    get_first_function_name, compute_metrics as compute_metric_setfit
 from nlbse_jex.utils import parse_args
 from nlbse_jex.utils import generate_base_config
 from nlbse_jex.utils import load_yaml_config
@@ -149,7 +149,7 @@ class TestUtils(unittest.TestCase):
     def test_compute_metrics(self):
         labels = [[0, 1], [0, 1]]
         preds = [1, 0]
-        metrics = compute_metrics(preds, labels)
+        metrics = compute_metric_setfit(preds, labels)
 
         self.assertEqual(0, metrics["class_0_true_positives"])
         self.assertEqual(1, metrics["class_0_false_positives"])
