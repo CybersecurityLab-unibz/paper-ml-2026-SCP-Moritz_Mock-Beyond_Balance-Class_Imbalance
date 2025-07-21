@@ -1,10 +1,6 @@
 import unittest
-from nlbse_jex.utils import read_config, str2bool, read_files_weighted_loss_strategy, find_function_callable, \
-    get_first_function_name
+from nlbse_jex.proxy import Proxy
 from nlbse_jex.utils import parse_args
-from nlbse_jex.utils import generate_base_config
-from nlbse_jex.utils import load_yaml_config
-from nlbse_jex.utils import import_function_from_path
 from unittest.mock import patch
 import os
 
@@ -16,8 +12,8 @@ class TestUtils(unittest.TestCase):
         self.patcher = patch('sys.argv', [
             'program_name',
             '--weighted-loss-strategy', f'{self.path_prefix}/dummy_data/test_function.py',
-            '--train', 'dummy_data/pathon_train.csv',
-            '--test', 'dummy_data/pathon_test.csv',
+            '--train', f'{self.path_prefix}/dummy_data/pathon_train.csv',
+            '--test', f'{self.path_prefix}/dummy_data/pathon_test.csv',
             '--column-key-text', 'combo',
             '--column-key-label', 'labels',
             '--config-path', self.default_config_path,
@@ -27,122 +23,9 @@ class TestUtils(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
-        generate_base_config(self.default_config_path, {"epoch": [1, 2, 3, 4, 5]})
 
-    def test_write_yml(self):
-        data = {"epoch": [1]}
-        generate_base_config(self.default_config_path, data)
-        yml = load_yaml_config(self.default_config_path)
-        self.assertEqual(data, yml)
-
-
-    def test_read_config_does_not_exists(self):
-        parser = parse_args()
-        args = parser.parse_args()
-        args.config_path = f'{self.path_prefix}/dummy_data/does_not_exists.yml'
-        with self.assertRaises(FileNotFoundError):
-            read_config(args, parser)
-
-    def test_read_config_empty_config(self):
-        path = f'{self.path_prefix}/dummy_data/dummy_config_empty.yml'
-        open(path, 'w').close()
-        parser = parse_args()
-        args = parser.parse_args()
-        args.config_path = path
-        yml = read_config(args, parser)
-        self.assertEqual(args, yml)
-        os.remove(path)
-
-    def test_read_config_invalid_config(self):
-        data = {"epochs": [1]}
-        generate_base_config(self.default_config_path, data)
-        parser = parse_args()
-        args = parser.parse_args()
-        with self.assertRaises(ValueError):
-            read_config(args, parser)
-
-    def test_read_config_invalid_value(self):
-        data = {"epoch": [-1]}
-        generate_base_config(self.default_config_path, data)
-        parser = parse_args()
-        args = parser.parse_args()
-        with self.assertRaises(ValueError):
-            read_config(args, parser)
-
-        data = {"epoch": 1}
-        generate_base_config(self.default_config_path, data)
-        parser = parse_args()
-        args = parser.parse_args()
-        with self.assertRaises(ValueError):
-            read_config(args, parser)
-
-        data = {"maximise_model": True}
-        generate_base_config(self.default_config_path, data)
-        parser = parse_args()
-        args = parser.parse_args()
-        yml = read_config(args, parser)
-        self.assertEqual(yml.maximise_model, True)
-
-        data = {"maximise_model": "yes"}
-        generate_base_config(self.default_config_path, data)
-        parser = parse_args()
-        args = parser.parse_args()
-        yml = read_config(args, parser)
-        self.assertEqual(yml.maximise_model, True)
-
-
-        data = {"maximise_model": "TURE"}
-        generate_base_config(self.default_config_path, data)
-        parser = parse_args()
-        args = parser.parse_args()
-        with self.assertRaises(ValueError):
-            read_config(args, parser)
-
-    def test_read_config(self):
-        parser = parse_args()
-        args = parser.parse_args()
-        yml = read_config(args, parser)
-        args.epoch = [1, 2, 3, 4, 5]
-
-        self.assertEqual(args, yml)
-
-    def test_str2bool(self):
-        self.assertEqual(True, str2bool(True))
-        self.assertEqual(True, str2bool("yes"))
-        self.assertEqual(True, str2bool("true"))
-        self.assertEqual(True, str2bool("t"))
-        self.assertEqual(True, str2bool("y"))
-        self.assertEqual(True, str2bool("1"))
-        self.assertEqual(False, str2bool(False))
-        self.assertEqual(False, str2bool("no"))
-        self.assertEqual(False, str2bool("False"))
-        self.assertEqual(False, str2bool("n"))
-        self.assertEqual(False, str2bool("0"))
-        with self.assertRaises(ValueError):
-            str2bool("hello")
-
-    def test_import_function_dynamically(self):
+    def test_proxy(self):
         args = parse_args().parse_args()
-        function = import_function_from_path(args.weighted_loss_strategy[0])
-        data = [[0, 1, 0]]
-        weights = function(data)
-        self.assertEqual(weights, [{1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}])
-
-    def test_read_files_weighted_loss_strategy(self):
-        args = parse_args().parse_args()
-        args = read_files_weighted_loss_strategy(args)
-        function = find_function_callable(args.weighted_loss_strategy, "my_function")
-        self.assertEqual(function, args.weighted_loss_strategy[0])
-        with self.assertRaises(ValueError):
-            find_function_callable([], "my_function")
-        with self.assertRaises(ValueError):
-            find_function_callable(args.weighted_loss_strategy, "own_function")
-
-    def test_import_function_error(self):
-        path = f'{self.path_prefix}/dummy_data/my_function.py'
-        open(path, 'w').write("")
-        with self.assertRaises(ValueError):
-            get_first_function_name(path)
-
-        os.remove(path)
+        p = Proxy(args)
+        p.create_model()
 
