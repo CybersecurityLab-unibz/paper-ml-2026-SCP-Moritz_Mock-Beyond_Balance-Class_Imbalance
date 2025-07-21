@@ -22,7 +22,7 @@ class LinearWeights():
         elif isinstance(self.type, types.FunctionType):
             self.class_weight_dicts = self.type(self.labels)
         else:
-            self.logger.error("Not defined type of liner weights!")
+            raise ValueError("Not defined type of liner weights!")
 
     def _EW(self):
         for i in range(self.num_classes):
