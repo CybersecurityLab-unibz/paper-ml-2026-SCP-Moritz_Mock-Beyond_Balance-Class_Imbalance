@@ -221,12 +221,10 @@ def compute_metrics_roberta(eval_pred):
 
     # Apply sigmoid to logits to get probabilities (for multilabel)
     probabilities = torch.sigmoid(logits)  # Shape: (num_samples, num_classes)
-    print(probabilities)
+
     # Convert probabilities to binary predictions based on a threshold
     threshold = 0.5
     predictions = (probabilities >= threshold).int()  # Binarize predictions
-
-    print(predictions)
 
     # Ensure predictions and labels are on the same device (CPU)
     predictions = predictions.cpu().numpy()
