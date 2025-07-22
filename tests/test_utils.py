@@ -1,12 +1,34 @@
 import unittest
 from nlbse_jex.utils import read_config, str2bool, read_files_weighted_loss_strategy, find_function_callable, \
-    get_first_function_name, compute_metrics as compute_metric_setfit
+    get_first_function_name, compute_metrics as compute_metric_setfit, copy_all_files, recursively_delete_all_files
 from nlbse_jex.utils import parse_args
 from nlbse_jex.utils import generate_base_config
 from nlbse_jex.utils import load_yaml_config
 from nlbse_jex.utils import import_function_from_path
 from unittest.mock import patch
 import os
+import filecmp
+
+
+import os
+import filecmp
+
+def compare_folders(dir1, dir2):
+    if not os.path.isdir(dir2):
+        return False
+
+    comparison = filecmp.dircmp(dir1, dir2)
+
+    if comparison.left_only or comparison.right_only or comparison.diff_files or comparison.funny_files:
+        return False
+    else:
+        for subdir in comparison.common_dirs:
+            new_dir1 = os.path.join(dir1, subdir)
+            new_dir2 = os.path.join(dir2, subdir)
+            if not compare_folders(new_dir1, new_dir2):
+                return False
+        return True
+
 
 class TestUtils(unittest.TestCase):
 
@@ -165,3 +187,17 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(1, metrics["class_1_precision"])
         self.assertEqual(0.5, metrics["class_1_recall"])
         self.assertEqual(0.6666666666666666, metrics["class_1_f1"])
+
+
+    def test_copy_all_files(self):
+        print(self.path_prefix)
+        path_source = f'{self.path_prefix}/dummy_data'
+        path_target = f'{self.path_prefix}/depth_level/dummy_data_copy'
+
+        copy_all_files(path_source, path_target)
+
+        self.assertEqual(True, compare_folders(path_source, path_target))
+
+        recursively_delete_all_files(path_target)
+
+        self.assertEqual(False, compare_folders(path_source, path_target))
