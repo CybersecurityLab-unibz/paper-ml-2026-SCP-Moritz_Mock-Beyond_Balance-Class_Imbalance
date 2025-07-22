@@ -235,8 +235,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(0.5, metrics["class_1_recall"])
         self.assertEqual(0.6666666666666666, metrics["class_1_f1"])
 
-    def test_copy_all_files(self):
-        print(self.path_prefix)
+    def test_copy_all_files_and_delete_them(self):
         path_source = f'{self.path_prefix}/dummy_data'
         path_target = f'{self.path_prefix}/depth_level/dummy_data_copy'
 

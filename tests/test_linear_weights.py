@@ -68,7 +68,7 @@ class TestUtils(unittest.TestCase):
 
         lw = LinearWeights(self.args.weighted_loss_strategy[0], self.data_train["label"])
         w = lw.get_class_weight_dicts()
-        print(w)
+
         self.assertEqual(w, [{1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}])
 
         with self.assertRaises(ValueError):
