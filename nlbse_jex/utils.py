@@ -212,8 +212,6 @@ def compute_metrics_setfit(preds, labels):
 def compute_metrics_roberta(eval_pred):
     # Unpack the predictions and labels
     logits, labels = eval_pred
-    print(logits)
-    print(labels)
 
     # Convert logits to a PyTorch tensor if they are in NumPy format
     if isinstance(logits, np.ndarray):
