@@ -5,6 +5,7 @@ from transformers import RobertaTokenizer, RobertaForSequenceClassification, Tra
 import torch, torch.nn as nn
 import numpy as np
 import os
+from nlbse_jex.utils import compute_metrics_roberta
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -38,57 +39,7 @@ class CustomTrainer(Trainer):
         return (loss, outputs) if return_outputs else loss
 
 
-def compute_metrics_roberta(eval_pred):
-    # Unpack the predictions and labels
-    logits, labels = eval_pred
 
-    # Convert logits to a PyTorch tensor if they are in NumPy format
-    if isinstance(logits, np.ndarray):
-        logits = torch.from_numpy(logits)
-    if isinstance(labels, np.ndarray):
-        labels = torch.from_numpy(labels)
-
-    # Apply sigmoid to logits to get probabilities (for multilabel)
-    probabilities = torch.sigmoid(logits)  # Shape: (num_samples, num_classes)
-
-    # Convert probabilities to binary predictions based on a threshold
-    threshold = 0.5
-    predictions = (probabilities >= threshold).int()  # Binarize predictions
-
-    # Ensure predictions and labels are on the same device (CPU)
-    predictions = predictions.cpu().numpy()
-    labels = labels.cpu().numpy()
-
-    # TODO
-    ## call here
-    #return compute_metrics(predictions, labels)
-
-    # Check if predictions and labels are compatible
-    num_classes = labels.shape[1]
-    class_metrics = {}
-
-    # Calculate TP, FP, TN, FN per class
-    for class_idx in range(num_classes):
-        tp = np.sum((predictions[:, class_idx] == 1) & (labels[:, class_idx] == 1))
-        fp = np.sum((predictions[:, class_idx] == 1) & (labels[:, class_idx] == 0))
-        tn = np.sum((predictions[:, class_idx] == 0) & (labels[:, class_idx] == 0))
-        fn = np.sum((predictions[:, class_idx] == 0) & (labels[:, class_idx] == 1))
-
-        # Calculate precision, recall, and F1 score for the current class
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
-        # Store metrics for the current class
-        class_metrics[f"class_{class_idx}_true_positives"] = tp
-        class_metrics[f"class_{class_idx}_false_positives"] = fp
-        class_metrics[f"class_{class_idx}_true_negatives"] = tn
-        class_metrics[f"class_{class_idx}_false_negatives"] = fn
-        class_metrics[f"class_{class_idx}_precision"] = precision
-        class_metrics[f"class_{class_idx}_recall"] = recall
-        class_metrics[f"class_{class_idx}_f1"] = f1
-
-    return class_metrics
 
 class RoBERTaModels(DataHandler):
 
