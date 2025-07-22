@@ -57,7 +57,8 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(dh.output_path, f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{re.sub("/", "_", f'{self.path_prefix}/dummy_data/dataset')}/maximise_model/checkpoints')
         self.assertEqual(dh.logs_path, f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{re.sub("/", "_", f'{self.path_prefix}/dummy_data/dataset')}/maximise_model/logs')
 
-    def test_data_handler_calculate_weights(self):
+
+    def test_data_handler_in_depth(self):
         args = parse_args().parse_args()
         args.batch_size = args.batch_size[0]
         args.epoch = args.epoch[0]
@@ -68,16 +69,6 @@ class TestUtils(unittest.TestCase):
         dh.calculate_weights()
 
         self.assertEqual([{1: 1, 0: 0}, {1: 1, 0: 0}, {1: 1, 0: 0}, {1: 1, 0: 0}, {1: 1, 0: 0}], dh.class_weight_dicts)
-
-
-    def test_data_handler_summarize_metrics(self):
-        args = parse_args().parse_args()
-        args.batch_size = args.batch_size[0]
-        args.epoch = args.epoch[0]
-        args.lr = args.lr[0]
-        args.weight_decay = args.weight_decay[0]
-        args.weighted_loss_strategy = args.weighted_loss_strategy[0]
-        dh = DataHandler(args)
 
         labels = np.array([[0, 1, 0, 0, 0], [0, 1, 0, 0, 0]])
         preds = np.array([[0, 1, 0, 0, 0], [1, 0, 0, 0, 0]])
