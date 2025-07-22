@@ -9,6 +9,7 @@ import shutil
 import types
 import logging
 import argparse
+import torch
 
 def read_files_weighted_loss_strategy(args):
     args_ok = {
@@ -192,7 +193,7 @@ def read_config(args, parser):
     return argparse.Namespace(**merge_config_with_args(yaml_config, args, parser))
 
 
-def compute_metrics(preds, labels):
+def compute_metrics_setfit(preds, labels):
     if hasattr(preds, "detach"):
         preds = preds.detach().cpu().numpy()
     elif isinstance(preds, list):
@@ -205,11 +206,38 @@ def compute_metrics(preds, labels):
 
     num_classes = labels.shape[1]
     preds = np.eye(num_classes)[preds]
-    class_metrics = {}
 
+    return compute_metrics(preds, labels, num_classes)
+
+def compute_metrics_roberta(eval_pred):
+    # Unpack the predictions and labels
+    logits, labels = eval_pred
+    print(logits)
     print(labels)
-    print(preds)
 
+    # Convert logits to a PyTorch tensor if they are in NumPy format
+    if isinstance(logits, np.ndarray):
+        logits = torch.from_numpy(logits)
+    if isinstance(labels, np.ndarray):
+        labels = torch.from_numpy(labels)
+
+    # Apply sigmoid to logits to get probabilities (for multilabel)
+    probabilities = torch.sigmoid(logits)  # Shape: (num_samples, num_classes)
+    print(probabilities)
+    # Convert probabilities to binary predictions based on a threshold
+    threshold = 0.5
+    predictions = (probabilities >= threshold).int()  # Binarize predictions
+
+    print(predictions)
+
+    # Ensure predictions and labels are on the same device (CPU)
+    predictions = predictions.cpu().numpy()
+    labels = labels.cpu().numpy()
+
+    return compute_metrics(predictions, labels, labels.shape[1])
+
+def compute_metrics(preds, labels, num_classes):
+    class_metrics = {}
     for class_idx in range(num_classes):
         tp = np.sum((preds[:, class_idx] == 1) & (labels[:, class_idx] == 1))
         fp = np.sum((preds[:, class_idx] == 1) & (labels[:, class_idx] == 0))

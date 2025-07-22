@@ -1,15 +1,21 @@
 import unittest
-from nlbse_jex.utils import read_config, str2bool, read_files_weighted_loss_strategy, find_function_callable, \
-    get_first_function_name, compute_metrics as compute_metric_setfit, copy_all_files, recursively_delete_all_files
+
+import numpy as np
+
+from nlbse_jex.utils import read_config, str2bool
+from nlbse_jex.utils import read_files_weighted_loss_strategy
+from nlbse_jex.utils import find_function_callable
+from nlbse_jex.utils import get_first_function_name
+from nlbse_jex.utils import compute_metrics
+from nlbse_jex.utils import compute_metrics_setfit
+from nlbse_jex.utils import compute_metrics_roberta
+from nlbse_jex.utils import copy_all_files
+from nlbse_jex.utils import recursively_delete_all_files
 from nlbse_jex.utils import parse_args
 from nlbse_jex.utils import generate_base_config
 from nlbse_jex.utils import load_yaml_config
 from nlbse_jex.utils import import_function_from_path
 from unittest.mock import patch
-import os
-import filecmp
-
-
 import os
 import filecmp
 
@@ -169,9 +175,9 @@ class TestUtils(unittest.TestCase):
         os.remove(path)
 
     def test_compute_metrics(self):
-        labels = [[0, 1], [0, 1]]
-        preds = [1, 0]
-        metrics = compute_metric_setfit(preds, labels)
+        labels = np.array([[0, 1], [0, 1]])
+        preds = np.array([[0, 1], [1, 0]])
+        metrics = compute_metrics(preds, labels, 2)
 
         self.assertEqual(0, metrics["class_0_true_positives"])
         self.assertEqual(1, metrics["class_0_false_positives"])
@@ -188,6 +194,46 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(0.5, metrics["class_1_recall"])
         self.assertEqual(0.6666666666666666, metrics["class_1_f1"])
 
+
+    def test_compute_metrics_setfit(self):
+        labels = [[0, 1], [0, 1]]
+        preds = [1, 0]
+        metrics = compute_metrics_setfit(preds, labels)
+
+        self.assertEqual(0, metrics["class_0_true_positives"])
+        self.assertEqual(1, metrics["class_0_false_positives"])
+        self.assertEqual(1, metrics["class_0_true_negatives"])
+        self.assertEqual(0, metrics["class_0_false_negatives"])
+        self.assertEqual(0, metrics["class_0_precision"])
+        self.assertEqual(0, metrics["class_0_recall"])
+        self.assertEqual(0, metrics["class_0_f1"])
+        self.assertEqual(1, metrics["class_1_true_positives"])
+        self.assertEqual(0, metrics["class_1_false_positives"])
+        self.assertEqual(0, metrics["class_1_true_negatives"])
+        self.assertEqual(1, metrics["class_1_false_negatives"])
+        self.assertEqual(1, metrics["class_1_precision"])
+        self.assertEqual(0.5, metrics["class_1_recall"])
+        self.assertEqual(0.6666666666666666, metrics["class_1_f1"])
+
+    def test_compute_metrics_roberta(self):
+        labels = np.array([[0, 1], [0, 1]])
+        logits = np.array([[-0.1, 1], [1, -0.1]]) # sigmoid converts into [[0.4750, 0.7311], [0.7311, 0.4750]], which is translated to [[0, 1], [1, 0]] using the threshold of 0.5
+        metrics = compute_metrics_roberta((logits, labels))
+
+        self.assertEqual(0, metrics["class_0_true_positives"])
+        self.assertEqual(1, metrics["class_0_false_positives"])
+        self.assertEqual(1, metrics["class_0_true_negatives"])
+        self.assertEqual(0, metrics["class_0_false_negatives"])
+        self.assertEqual(0, metrics["class_0_precision"])
+        self.assertEqual(0, metrics["class_0_recall"])
+        self.assertEqual(0, metrics["class_0_f1"])
+        self.assertEqual(1, metrics["class_1_true_positives"])
+        self.assertEqual(0, metrics["class_1_false_positives"])
+        self.assertEqual(0, metrics["class_1_true_negatives"])
+        self.assertEqual(1, metrics["class_1_false_negatives"])
+        self.assertEqual(1, metrics["class_1_precision"])
+        self.assertEqual(0.5, metrics["class_1_recall"])
+        self.assertEqual(0.6666666666666666, metrics["class_1_f1"])
 
     def test_copy_all_files(self):
         print(self.path_prefix)
