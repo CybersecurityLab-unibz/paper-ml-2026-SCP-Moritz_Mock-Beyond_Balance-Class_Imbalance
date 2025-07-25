@@ -3,7 +3,7 @@ import setfit
 from sentence_transformers import SentenceTransformer
 from nlbse_jex.data_handler import DataHandler
 from nlbse_jex.utils import compute_metrics
-from nlbse_jex.dynamic_weights import FAMO,CoBaStatus
+from nlbse_jex.dynamic_weights import WeightMethods
 import warnings
 from typing import Dict, List, Optional, Union, Any
 import torch
@@ -72,9 +72,9 @@ class CustomSetFitModel(setfit.SetFitModel):
 
 # TODO how to mange custum weiting methods?
     def loss_selection(self):
-        if self.custom_loss_name in ["EW","ICF","RBF","COBA"]:
+        if self.custom_loss_name in ["EW","ICF","RBF"]:
             loss = nn.CrossEntropyLoss(weight=self.custom_loss_weight) # changed from self.model_head.get_loss_fn()
-        elif self.custom_loss_name in ["FAMO"]:
+        elif self.custom_loss_name in ["FAMO","COBA"]:
             loss = torch.nn.BCEWithLogitsLoss(reduction="none").mean(0)
         return loss
 
@@ -120,32 +120,13 @@ class CustomSetFitModel(setfit.SetFitModel):
         criterion = self.loss_selection() # changed from self.model_head.get_loss_fn()
         optimizer = self._prepare_optimizer(head_learning_rate, body_learning_rate, l2_weight)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
-        if self.custom_loss_name == 'FAMO':
-            weight_opt = FAMO(n_class=len(self.custom_loss_weight), device=self.device)
-        #TODO how to evaluate the model to initialise COBA?
-        elif self.custom_loss_name == 'COBA':
-            self.model.eval()
-            eval_loss, eval_task_loss, _, _, _ = self.accelerate_evaluate(
-                completed_steps,
-                0,
-                min_eval_loss,
-                stall_num,
-                best_step,
-            )
-            self.model.train()
-            coba_status = CoBaStatus(
-                coba_warmup_steps=100,
-                coba_history_length=200,
-                coba_tau=5,
-                coba_update_interval=1,
-                coba_sample_valid_num=1,
-                valid_dataloader=None,
-                n_task=len(self.custom_loss_weight)
-            )
-            coba_status.valid_task_loss_begining = eval_task_loss.clone().to(self.model.device)
-            coba_status.sample_valid_batch(self.model, completed_steps)
-            logger.info(f"valid_task_loss: {coba_status.valid_task_loss_accumulated}", main_process_only=True)
-
+        if self.custom_loss_name in ["FAMO","COBA"]:
+            dynamic_weight_loss = WeightMethods(
+                method=self.custom_loss_name,
+                n_tasks=len(self.custom_loss_weight),
+                device=self.device
+                )
+        
         for epoch_idx in trange(num_epochs, desc="Epoch", disable=not show_progress_bar):
             for batch in tqdm(dataloader, desc="Iteration", disable=not show_progress_bar, leave=False):
                 features, labels = batch
@@ -162,27 +143,18 @@ class CustomSetFitModel(setfit.SetFitModel):
                     )
                 outputs = self.model_head(outputs)
                 logits = outputs["logits"]
-
-                if self.custom_loss_name == 'COBA':
-                    if (completed_steps % self.args.coba_update_interval == 0 and completed_steps >= self.args.coba_warmup_steps):
-                        with torch.no_grad():
-                            per_task_weight = coba_status.compute_per_task_weight(completed_steps=completed_steps)
-                            coba_status.log_per_task_weight += per_task_weight
-                            # logger.info(f'per_task_weight: {per_task_weight}', main_process_only=True)
-                        self.custom_loss_weight = per_task_weight
-                        criterion = self.loss_selection()
-
                 loss: torch.Tensor = criterion(logits, labels)
-                if self.custom_loss_name=='FAMO':
-                    weight_opt.backward(loss)
+
+                if self.custom_loss_name in ["FAMO","COBA"]:
+                    dynamic_weight_loss.backward(loss)
                 else:
                     loss.backward()
                 optimizer.step()
 
-                if self.custom_loss_name == 'FAMO':
+                if self.custom_loss_name in ["FAMO","COBA"]:
                     with torch.no_grad():
                         new_loss = criterion(logits, labels)
-                        weight_opt.update(new_loss)
+                        dynamic_weight_loss.update(new_loss)
 
             scheduler.step()
 
