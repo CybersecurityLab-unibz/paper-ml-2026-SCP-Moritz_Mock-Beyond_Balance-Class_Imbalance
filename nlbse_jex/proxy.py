@@ -9,7 +9,7 @@ import logging
 class Proxy():
 
     def __init__(self, args):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('nlbse_jsx.proxy')
         self.model_path = None
         self.model_type = None
         self.model = None
