@@ -17,7 +17,7 @@ dataset_id = 'NLBSE/nlbse25-code-comment-classification'
 
 class DataHandler():
     def __init__(self, args):
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger('nlbse_jex.data_handler')
         self.args = args
         self.num_classes = None
         self.class_weight_dicts = None
@@ -83,9 +83,9 @@ class DataHandler():
     def summarize_metrics(self, metrics):
         for i in range(self.num_classes):
             f1 = metrics.get(f"class_{i}_f1")
-            prec = metrics.get(f"class_{i}_precision")
-            rec = metrics.get(f"class_{i}_recall")
-            self.logger.info(f"Class {i}: F1={f1:.3f}, Precision={prec:.3f}, Recall={rec:.3f}")
+            precision = metrics.get(f"class_{i}_precision")
+            recall = metrics.get(f"class_{i}_recall")
+            self.logger.info(f"Class {i}: F1={f1:.3f}, Precision={precision:.3f}, Recall={recall:.3f}")
 
     def update_csv(self, metric):
         if not os.path.exists(self.csv_path):
