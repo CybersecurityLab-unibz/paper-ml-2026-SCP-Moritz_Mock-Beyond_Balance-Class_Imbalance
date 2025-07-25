@@ -222,8 +222,9 @@ class DataHandler():
 
 
     def calculate_weights(self):
+        self.num_classes = len(self.data_train["label"][0])
+        
         if not self.dynamc:
-            self.num_classes = len(self.data_train["label"][0])
             self.class_weight_dicts = []
             self.logger.info(self.args)
             linear_weights = LinearWeights(self.args.weighted_loss_strategy, self.data_train["label"])
