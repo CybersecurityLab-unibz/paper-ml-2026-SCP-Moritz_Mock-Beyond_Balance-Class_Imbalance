@@ -30,6 +30,7 @@ class DataHandler():
         self.best_model = None
         self.csv_path = None
         self.dataset_name = None
+        self.dynamc = self.args.weighted_loss_strategy in ["FAMO", "COBA"]
         self.read_data()
         self.create_paths()
         self.set_seed(42)
@@ -221,10 +222,11 @@ class DataHandler():
 
 
     def calculate_weights(self):
-        self.num_classes = len(self.data_train["label"][0])
-        self.class_weight_dicts = []
-        self.logger.info(self.args)
-        linear_weights = LinearWeights(self.args.weighted_loss_strategy, self.data_train["label"])
-        self.class_weight_dicts = linear_weights.get_class_weight_dicts()
+        if not self.dynamc:
+            self.num_classes = len(self.data_train["label"][0])
+            self.class_weight_dicts = []
+            self.logger.info(self.args)
+            linear_weights = LinearWeights(self.args.weighted_loss_strategy, self.data_train["label"])
+            self.class_weight_dicts = linear_weights.get_class_weight_dicts()
 
-        self.logger.info(self.class_weight_dicts)
+            self.logger.info(self.class_weight_dicts)

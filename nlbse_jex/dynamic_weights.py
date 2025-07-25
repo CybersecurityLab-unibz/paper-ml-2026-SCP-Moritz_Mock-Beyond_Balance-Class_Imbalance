@@ -233,12 +233,6 @@ class COBA(WeightMethod):
             else:
                 X = torch.stack((x ** 2, x, torch.ones_like(x, dtype=torch.float64))).T
 
-            # implementation for numpy
-            # X_np = X.T @ (ws[:, None] * X)
-            # Y_np = X.T @ (ws * y)
-            # w = torch.from_numpy(np.linalg.solve(X_np.numpy(), Y_np.numpy()))
-
-            # implementation for torch
             w = torch.linalg.solve(X.T @ (ws[:, None] * X), X.T @ (ws * y))
 
             result = w[0]
