@@ -6,36 +6,57 @@ import torch, torch.nn as nn
 import numpy as np
 import os
 from nlbse_jex.utils import compute_metrics_roberta
+from nlbse_jex.dynamic_weights import WeightMethods
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class WeightedBCELoss(nn.Module):
-    def __init__(self, weights):
+    def __init__(self,custom_loss_weight):
         super(WeightedBCELoss, self).__init__()
-        self.weights = torch.tensor(weights, device=device)
+        self.custom_loss_weight = torch.tensor(custom_loss_weight, device=device)
         self.bce = nn.BCEWithLogitsLoss(reduction="none")
 
-    def forward(self, logits, labels):
+    def forward(self, logits, labels,update_loss_weight=None):
+        if update_loss_weight is not None:
+            self.custom_loss_weight = update_loss_weight
         logits = logits.to(device)
         labels = labels.to(device)
 
         loss = self.bce(logits, labels)  # Calculate unweighted BCE loss
 
-        weighted_loss = loss * self.weights  # Apply weights to each label's loss
+        weighted_loss = loss * self.custom_loss_weight  # Apply weights to each label's loss
         return weighted_loss.mean()
 
 
 class CustomTrainer(Trainer):
-    def __init__(self, *args, custom_loss=None, **kwargs):
+    def __init__(self, *args, custom_loss=None,dynamic_weight_loss=None,num_classes=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.custom_loss = custom_loss
+        self.dynamic_weight_loss = dynamic_weight_loss
+        self.dynamc = self.dynamic_weight_loss is not None
+        self.num_classes=num_classes
+        self.update_loss_weight=None
 
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         labels = inputs.pop("labels").float().to(device)
         inputs = {k: v.to(device) for k, v in inputs.items()}
+        
         outputs = model(**inputs)
         logits = outputs.logits
         loss = self.custom_loss(logits, labels)
+
+        if self.dynamc:
+            with torch.no_grad():
+                self.dynamic_weight_loss.get_weighted_loss(loss.mean(0))
+                update_loss_weight = self.dynamic_weight_loss._get_weight()
+            
+        loss = self.custom_loss(logits, labels,update_loss_weight)
+
+        if self.dynamc:
+            with torch.no_grad():
+                new_loss = self.custom_loss(logits, labels,update_loss_weight)
+                self.dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
+
         return (loss, outputs) if return_outputs else loss
 
 
@@ -52,6 +73,8 @@ class RoBERTaModels(DataHandler):
         self.model = None
         self.trainer = None
         self.custom_loss = None
+        self.dynamc = self.args.weighted_loss_strategy in ["FAMO", "COBA"]
+        
 
 
 
@@ -72,9 +95,17 @@ class RoBERTaModels(DataHandler):
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id) # TODO tokenizer is not loaded properly, if it is a local path; from huggingface directly all is fine
 
-        label_weights = torch.tensor([weight[1] for weight in self.class_weight_dicts])
+        if self.dynamc:
+            self.custom_loss_weight = torch.ones(self.num_classes,device=device)
+            self.dynamic_weight_loss = WeightMethods(
+                method=self.args.weighted_loss_strategy,
+                n_tasks=self.num_classes,
+                device=device
+            )
+        else:
+            self.custom_loss_weight = torch.tensor([weight[1] for weight in self.class_weight_dicts])
 
-        self.custom_loss = WeightedBCELoss(weights=label_weights)
+        self.custom_loss = WeightedBCELoss(self.custom_loss_weight)
 
         self.model = RobertaForSequenceClassification.from_pretrained(self.model_id, num_labels=self.num_classes)
         self.model.config.problem_type = "multi_label_classification"
@@ -110,7 +141,9 @@ class RoBERTaModels(DataHandler):
             eval_dataset=self.data_test,
             custom_loss=self.custom_loss,
             data_collator=data_collator,
-            compute_metrics=compute_metrics_roberta
+            compute_metrics=compute_metrics_roberta,
+            dynamic_weight_loss=self.dynamic_weight_loss,
+            num_classes=self.num_classes
         )
 
         self.logger.info("Trainer Created!")

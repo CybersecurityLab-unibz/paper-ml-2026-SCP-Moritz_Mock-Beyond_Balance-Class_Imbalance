@@ -18,6 +18,10 @@ class WeightMethod:
     ):
         pass
 
+    @abstractmethod
+    def _get_weight(self,**kwargs):
+        pass
+
     def update(self, **kwargs):
         pass
 
@@ -114,6 +118,9 @@ class FAMO(WeightMethod):
     def set_min_losses(self, losses):
         self.min_losses = losses
 
+    def _get_weight(self):
+        return F.softmax(self.w, -1)
+
     def get_weighted_loss(self, losses):
         self.prev_loss = losses
         z = F.softmax(self.w, -1)
@@ -159,6 +166,7 @@ class COBA(WeightMethod):
         self.coba_update_interval = coba_update_interval
         self.coba_sample_valid_num = coba_sample_valid_num
         self.history_task_valid_loss = torch.empty((n_tasks, 0), device=device)
+        self.w = torch.ones(n_tasks, device=device),
         self.n_tasks = n_tasks
         self.device = device
         self.completed_steps = 0
@@ -240,42 +248,26 @@ class COBA(WeightMethod):
             result = 0.0
 
         return result
-
+    
+    def _get_weight(self):
+        return self.w
+    
     def get_weighted_loss(self, losses):
-        per_task_weight = self.compute_per_task_weight()
-        loss = losses * per_task_weight
+        if self.completed_steps >= self.coba_warmup_steps:
+            self.w = self.compute_per_task_weight()
+        print(self.w)
+        loss = losses * self.w
         return loss.sum()
 
     def update(self, curr_loss):
         self.completed_steps += 1
-        
+        print(curr_loss)
         self.history_task_valid_loss = torch.cat([
             self.history_task_valid_loss,
             curr_loss.unsqueeze(1)  # shape (n_tasks, 1)
             ], dim=1) # shape history ,task
-
-    def backward(
-        self,
-        losses: torch.Tensor,
-    ) -> Union[torch.Tensor, None]:
-        """
-
-        Parameters
-        ----------
-        losses :
-        shared_parameters :
-        task_specific_parameters :
-        last_shared_parameters : parameters of last shared layer/block
-        Returns
-        -------
-        Loss, extra outputs
-        """
-        if self.completed_steps >= self.coba_warmup_steps:
-            loss = self.get_weighted_loss(losses=losses)
-        else:
-            loss = losses.sum()
-        loss.backward()
-        return loss
+        
+        
     
 
 class WeightMethods:
@@ -289,6 +281,9 @@ class WeightMethods:
 
     def get_weighted_loss(self, losses, **kwargs):
         return self.method.get_weighted_loss(losses, **kwargs)
+    
+    def _get_weight(self,**kwargs):
+        return self.method._get_weight(**kwargs)
     
     def update(self,**kwargs):
         return self.method.update(**kwargs)
