@@ -1,4 +1,3 @@
-import argparse
 import importlib.util
 import os
 import ast
@@ -9,6 +8,8 @@ import numpy as np
 import shutil
 import types
 import logging
+import argparse
+import torch
 
 def read_files_weighted_loss_strategy(args):
     args_ok = {
@@ -123,8 +124,8 @@ def str2bool(v):
     else:
         raise ValueError('Boolean value expected.')
 
-def generate_base_config(path):
-    data = {
+def generate_base_config(path, data=None):
+    data = data if data is not None else {
         'epoch': [1, 2, 5, 10],
         'weighted_loss_strategy': ['EW']
     }
@@ -150,17 +151,8 @@ def validate_and_cast_config(yaml_config, parser):
         expected_type = action.type
         nargs = action.nargs
 
-        # Handle boolean flags (store_true / store_false)
-        if isinstance(action, argparse._StoreTrueAction):
-            if isinstance(value, bool):
-                validated_config[key] = value
-            elif isinstance(value, (int, str)):
-                validated_config[key] = str(value).lower() in ['true', '1', 'yes', 'on']
-            else:
-                raise ValueError(f"Invalid type for key '{key}': expected boolean-like value")
-
         # Handle nargs / list-type args
-        elif nargs is not None:
+        if nargs is not None:
             if not isinstance(value, list):
                 raise ValueError(f"Expected a list for argument '{key}', but got {type(value).__name__}")
 
@@ -170,8 +162,6 @@ def validate_and_cast_config(yaml_config, parser):
                     validated_config[key] = [expected_type(v) for v in value]
                 except Exception as e:
                     raise ValueError(f"Type error in list for key '{key}': expected elements of type {expected_type.__name__}, got {value}")
-            else:
-                validated_config[key] = value  # No type specified, accept as-is
 
         # Handle normal scalar args
         elif expected_type is not None:
@@ -179,8 +169,6 @@ def validate_and_cast_config(yaml_config, parser):
                 validated_config[key] = expected_type(value)
             except Exception as e:
                 raise ValueError(f"Type error for key '{key}': expected {expected_type.__name__}, got {value} ({type(value).__name__})")
-        else:
-            validated_config[key] = value
 
     return validated_config
 
@@ -198,13 +186,14 @@ def merge_config_with_args(yaml_config, cli_args, parser):
 
 def read_config(args, parser):
     raw_yaml = load_yaml_config(args.config_path)
-    logging.info(raw_yaml)
+    if raw_yaml is None:
+        logging.info(f"Provided file ({raw_yaml}) is empty, please specify a configuration!")
+        return args
     yaml_config = validate_and_cast_config(raw_yaml, parser)
-    logging.info(raw_yaml)
-    return merge_config_with_args(yaml_config, args, parser)
+    return argparse.Namespace(**merge_config_with_args(yaml_config, args, parser))
 
 
-def compute_metrics(preds, labels):
+def compute_metrics_setfit(preds, labels):
     if hasattr(preds, "detach"):
         preds = preds.detach().cpu().numpy()
     elif isinstance(preds, list):
@@ -217,8 +206,34 @@ def compute_metrics(preds, labels):
 
     num_classes = labels.shape[1]
     preds = np.eye(num_classes)[preds]
-    class_metrics = {}
 
+    return compute_metrics(preds, labels, num_classes)
+
+def compute_metrics_roberta(eval_pred):
+    # Unpack the predictions and labels
+    logits, labels = eval_pred
+
+    # Convert logits to a PyTorch tensor if they are in NumPy format
+    if isinstance(logits, np.ndarray):
+        logits = torch.from_numpy(logits)
+    if isinstance(labels, np.ndarray):
+        labels = torch.from_numpy(labels)
+
+    # Apply sigmoid to logits to get probabilities (for multilabel)
+    probabilities = torch.sigmoid(logits)  # Shape: (num_samples, num_classes)
+
+    # Convert probabilities to binary predictions based on a threshold
+    threshold = 0.5
+    predictions = (probabilities >= threshold).int()  # Binarize predictions
+
+    # Ensure predictions and labels are on the same device (CPU)
+    predictions = predictions.cpu().numpy()
+    labels = labels.cpu().numpy()
+
+    return compute_metrics(predictions, labels, labels.shape[1])
+
+def compute_metrics(preds, labels, num_classes):
+    class_metrics = {}
     for class_idx in range(num_classes):
         tp = np.sum((preds[:, class_idx] == 1) & (labels[:, class_idx] == 1))
         fp = np.sum((preds[:, class_idx] == 1) & (labels[:, class_idx] == 0))
@@ -272,9 +287,14 @@ def find_function_callable(candidates, function_name):
         if isinstance(candidate, types.FunctionType) and candidate.__name__ == function_name:
             return candidate
 
-    raise ValueError(f"The costum function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'.")
+    raise ValueError(f"The costume function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'.")
 
 
+def positive_value(input_value):
+    casted_value = int(input_value)
+    if casted_value <= 0:
+        raise argparse.ArgumentTypeError(f"{input_value} is not a positive integer")
+    return input_value
 
 
 def parse_args():
@@ -283,10 +303,10 @@ def parse_args():
     parser.add_argument("--generate-base-config", type=str2bool, default=False)
     parser.add_argument("--config-path", type=str, default=None)
     parser.add_argument("--weighted-loss-strategy", nargs="*", type=str, default=["EW", "test_function.py"])
-    parser.add_argument("--batch-size", nargs="*", type=int, default=[32])
-    parser.add_argument("--epoch", nargs="*", type=int, default=[5])
-    parser.add_argument("--lr", nargs="*", type=float, default=[1e-2])
-    parser.add_argument("--weight-decay", nargs="*", type=float, default=[0])
+    parser.add_argument("--batch-size", nargs="*", type=positive_value, default=[32])
+    parser.add_argument("--epoch", nargs="*", type=positive_value, default=[5])
+    parser.add_argument("--lr", nargs="*", type=positive_value, default=[1e-2])
+    parser.add_argument("--weight-decay", nargs="*", type=positive_value, default=[0])
     parser.add_argument("--train", required=True, type=str)
     parser.add_argument("--val", default=None, type=str)
     parser.add_argument("--test", required=True, type=str)

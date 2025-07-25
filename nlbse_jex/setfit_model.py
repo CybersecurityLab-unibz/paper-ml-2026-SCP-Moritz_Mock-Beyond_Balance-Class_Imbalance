@@ -2,7 +2,7 @@ import os
 import setfit
 from sentence_transformers import SentenceTransformer
 from nlbse_jex.data_handler import DataHandler
-from nlbse_jex.utils import compute_metrics
+from nlbse_jex.utils import compute_metrics_setfit
 import warnings
 from typing import Dict, List, Optional, Union, Any
 import torch
@@ -186,7 +186,7 @@ class SetFitModels(DataHandler):
             args=args,
             train_dataset=self.data_train, #.select(range(50)), #TODO remove range
             eval_dataset=self.data_test,
-            metric=compute_metrics,
+            metric=compute_metrics_setfit,
             freeze_embeddings=self.args.freeze_embeddings
         )
 
