@@ -18,7 +18,7 @@ class WeightMethod:
     ):
         pass
 
-    def update(**kwargs):
+    def update(self, **kwargs):
         pass
 
     def backward(
@@ -92,7 +92,7 @@ class LinearScalarization(WeightMethod):
 # original code from https://github.com/Cranial-XIX/FAMO #
 # original paper https://arxiv.org/pdf/2306.03792        #
 ##########################################################
-class FAMO:
+class FAMO(WeightMethod):
     """
     Fast Adaptive Multitask Optimization.
     """
@@ -104,7 +104,7 @@ class FAMO:
         w_lr: float = 0.025,   # the learning rate of the task logits
         max_norm: float = 1.0, # the maximum gradient norm
     ):
-        self.min_losses = torch.zeros(n_tasks).to(device)
+        self.min_losses = torch.zeros(n_tasks,device=device)
         self.w = torch.tensor([0.0] * n_tasks, device=device, requires_grad=True)
         self.w_opt = torch.optim.Adam([self.w], lr=w_lr, weight_decay=gamma)
         self.max_norm = max_norm
@@ -139,7 +139,7 @@ class FAMO:
 # original paper https://arxiv.org/pdf/2410.06741            #
 ##############################################################
 
-class COBA:
+class COBA(WeightMethod):
     """
     Convergence Balancer
     """
@@ -158,10 +158,12 @@ class COBA:
         self.coba_tau = coba_tau
         self.coba_update_interval = coba_update_interval
         self.coba_sample_valid_num = coba_sample_valid_num
-        self.history_task_valid_loss = [torch.empty(0,device=device) for _ in range(n_tasks)]
+        self.history_task_valid_loss = torch.empty((n_tasks, 0), device=device)
         self.n_tasks = n_tasks
         self.device = device
         self.completed_steps = 0
+        self.minimum_weight = 1 / (n_tasks * 10)
+
     
     def compute_per_task_weight(self):
         task_num = self.n_tasks
@@ -246,19 +248,21 @@ class COBA:
         return result
 
     def get_weighted_loss(self, losses):
-        per_task_weight = self.compute_per_task_weight(self)
+        per_task_weight = self.compute_per_task_weight()
         loss = losses * per_task_weight
         return loss.sum()
 
     def update(self, curr_loss):
         self.completed_steps += 1
-        for i in range(curr_loss.shape[1]):
-            self.history_task_valid_loss[i] = torch.cat((self.history_task_valid_loss[i], curr_loss[:, i]))
+        
+        self.history_task_valid_loss = torch.cat([
+            self.history_task_valid_loss,
+            curr_loss.unsqueeze(1)  # shape (n_tasks, 1)
+            ], dim=1) # shape history ,task
 
     def backward(
         self,
         losses: torch.Tensor,
-        step: int,
     ) -> Union[torch.Tensor, None]:
         """
 
@@ -300,7 +304,7 @@ class WeightMethods:
     ) -> Tuple[Union[torch.Tensor, None], Union[Dict, None]]:
         return self.method.backward(losses, **kwargs)
 
-    def __ceil__(self, losses, **kwargs):
+    def __call__(self, losses, **kwargs):
         return self.backward(losses, **kwargs)
 
     def parameters(self):

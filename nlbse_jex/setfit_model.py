@@ -65,17 +65,18 @@ class CustomTrainer(setfit.Trainer):
 
 
 class CustomSetFitModel(setfit.SetFitModel):
-    def __init__(self, *args, custom_loss_weight=None, custom_loss_name='EW',**kwargs):
+    def __init__(self, *args, custom_loss_weight=None, custom_loss_name='EW', num_classes=1,**kwargs):
         super().__init__(*args, **kwargs)
         self.custom_loss_name = custom_loss_name
         self.custom_loss_weight = torch.tensor(custom_loss_weight, device=self.device) # take device from parent class
+        self.num_classes = num_classes
 
 # TODO how to mange custum weiting methods?
     def loss_selection(self):
         if self.custom_loss_name in ["EW","ICF","RBF"]:
             loss = nn.CrossEntropyLoss(weight=self.custom_loss_weight) # changed from self.model_head.get_loss_fn()
         elif self.custom_loss_name in ["FAMO","COBA"]:
-            loss = torch.nn.BCEWithLogitsLoss(reduction="none").mean(0)
+            loss = torch.nn.BCEWithLogitsLoss(reduction="none")
         return loss
 
     def fit(
@@ -123,7 +124,7 @@ class CustomSetFitModel(setfit.SetFitModel):
         if self.custom_loss_name in ["FAMO","COBA"]:
             dynamic_weight_loss = WeightMethods(
                 method=self.custom_loss_name,
-                n_tasks=len(self.custom_loss_weight),
+                n_tasks=self.num_classes,
                 device=self.device
                 )
         
@@ -146,7 +147,7 @@ class CustomSetFitModel(setfit.SetFitModel):
                 loss: torch.Tensor = criterion(logits, labels)
 
                 if self.custom_loss_name in ["FAMO","COBA"]:
-                    dynamic_weight_loss.backward(loss)
+                    dynamic_weight_loss.backward(loss.mean(0))
                 else:
                     loss.backward()
                 optimizer.step()
@@ -154,7 +155,7 @@ class CustomSetFitModel(setfit.SetFitModel):
                 if self.custom_loss_name in ["FAMO","COBA"]:
                     with torch.no_grad():
                         new_loss = criterion(logits, labels)
-                        dynamic_weight_loss.update(new_loss)
+                        dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
 
             scheduler.step()
 
@@ -190,6 +191,7 @@ class SetFitModels(DataHandler):
             use_contrastive_head=False,
             custom_loss_weight=[weight[1] for weight in self.class_weight_dicts],
             custom_loss_name=self.args.weighted_loss_strategy,
+            num_classes=self.num_classes
         )
 
         self.logger.info("Model Defined!")
