@@ -1,8 +1,9 @@
+import argparse
 import unittest
 
 import numpy as np
 
-from nlbse_jex.utils import read_config, str2bool
+from nlbse_jex.utils import read_config, str2bool, DEFAULT_COBA_CONFIG, str2json
 from nlbse_jex.utils import read_files_weighted_loss_strategy
 from nlbse_jex.utils import find_function_callable
 from nlbse_jex.utils import get_first_function_name
@@ -15,6 +16,7 @@ from nlbse_jex.utils import parse_args
 from nlbse_jex.utils import generate_base_config
 from nlbse_jex.utils import load_yaml_config
 from nlbse_jex.utils import import_function_from_path
+from nlbse_jex.utils import validate_config
 from unittest.mock import patch
 import os
 import filecmp
@@ -48,7 +50,7 @@ class TestUtils(unittest.TestCase):
             '--test', 'dummy_data/pathon_test.csv',
             '--column-key-text', 'combo',
             '--column-key-label', 'labels',
-            '--config-path', self.default_config_path,
+            '--config-path', self.default_config_path
         ])
 
         self.patcher.start()
@@ -246,3 +248,20 @@ class TestUtils(unittest.TestCase):
         recursively_delete_all_files(path_target)
 
         self.assertEqual(False, compare_folders(path_source, path_target))
+
+    def test_str2json(self):
+        data = {"age": 30}
+        self.assertEqual(str2json('{"age": 30}'), data)
+        self.assertEqual(str2json(data), data)
+        with self.assertRaises(argparse.ArgumentTypeError):
+            str2json("not a json")
+
+    def test_validate_config(self):
+
+        self.assertEqual(DEFAULT_COBA_CONFIG, validate_config({}, DEFAULT_COBA_CONFIG))
+        self.assertEqual(DEFAULT_COBA_CONFIG, validate_config({'coba_warmup_steps': 100}, DEFAULT_COBA_CONFIG))
+        with self.assertRaises(ValueError) as context:
+            validate_config({'coba_warmup_steps': "100"}, DEFAULT_COBA_CONFIG)
+        with self.assertRaises(ValueError) as context:
+            validate_config({'test': "100"}, DEFAULT_COBA_CONFIG)
+

@@ -10,6 +10,7 @@ import types
 import logging
 import argparse
 import torch
+import json
 
 def read_files_weighted_loss_strategy(args):
     args_ok = {
@@ -123,6 +124,16 @@ def str2bool(v):
         return False
     else:
         raise ValueError('Boolean value expected.')
+
+
+def str2json(value):
+    if isinstance(value, dict):
+        return value
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError as e:
+        raise argparse.ArgumentTypeError(f"Invalid JSON string: {e}")
+
 
 def generate_base_config(path, data=None):
     data = data if data is not None else {
@@ -297,6 +308,33 @@ def positive_value(input_value):
     return input_value
 
 
+DEFAULT_FAMO_CONFIG = {
+    "gamma": 0.01
+}
+DEFAULT_COBA_CONFIG = {
+    "coba_warmup_steps": 100,
+    "coba_tau": 5
+}
+
+
+def validate_config(passed, default):
+    validated = {}
+
+    for key, default_val in default.items():
+        if key in passed:
+            if not isinstance(passed[key], type(default_val)):
+                raise ValueError(
+                    f"Type mismatch for '{key}': expected {type(default_val).__name__}, got {type(passed[key]).__name__}. Run stopped!")
+            validated[key] = passed[key]
+        else:
+            validated[key] = default_val
+
+    for key in passed:
+        if key not in default:
+            raise ValueError(f"Error: Unknown config key '{key}'. Run stopped!")
+
+    return validated
+
 def parse_args():
     parser = argparse.ArgumentParser()
 
@@ -317,6 +355,7 @@ def parse_args():
     parser.add_argument("--result-path", type=str, default=".")
     parser.add_argument("--maximise-model", type=str2bool, default=False)
     parser.add_argument("--freeze-embeddings", type=str2bool, default=False)
-
+    parser.add_argument("--famo-config", type=str2json, default=DEFAULT_FAMO_CONFIG)
+    parser.add_argument("--coba-config", type=str2json, default=DEFAULT_COBA_CONFIG)
 
     return parser
