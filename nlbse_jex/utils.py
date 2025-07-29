@@ -301,11 +301,17 @@ def find_function_callable(candidates, function_name):
     raise ValueError(f"The costume function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'.")
 
 
-def positive_value(input_value):
-    casted_value = int(input_value)
-    if casted_value <= 0:
-        raise argparse.ArgumentTypeError(f"{input_value} is not a positive integer")
-    return input_value
+def positive_value_int(v):
+    casted_value = int(v)
+    if casted_value < 0:
+        raise argparse.ArgumentTypeError(f"{v} is not a positive integer")
+    return casted_value
+
+def positive_value_float(v):
+    casted_value = float(v)
+    if casted_value < 0:
+        raise argparse.ArgumentTypeError(f"{v} is not a positive float")
+    return casted_value
 
 
 DEFAULT_FAMO_CONFIG = {
@@ -347,10 +353,10 @@ def parse_args():
     parser.add_argument("--generate-base-config", type=str2bool, default=False)
     parser.add_argument("--config-path", type=str, default=None)
     parser.add_argument("--weighted-loss-strategy", nargs="*", type=str, default=["EW", "test_function.py"])
-    parser.add_argument("--batch-size", nargs="*", type=positive_value, default=[32])
-    parser.add_argument("--epoch", nargs="*", type=positive_value, default=[5])
-    parser.add_argument("--lr", nargs="*", type=positive_value, default=[1e-2])
-    parser.add_argument("--weight-decay", nargs="*", type=positive_value, default=[0])
+    parser.add_argument("--batch-size", nargs="*", type=positive_value_int, default=[32])
+    parser.add_argument("--epoch", nargs="*", type=positive_value_int, default=[5])
+    parser.add_argument("--lr", nargs="*", type=positive_value_float, default=[1e-2])
+    parser.add_argument("--weight-decay", nargs="*", type=positive_value_float, default=[0])
     parser.add_argument("--train", required=True, type=str)
     parser.add_argument("--val", default=None, type=str)
     parser.add_argument("--test", required=True, type=str)
