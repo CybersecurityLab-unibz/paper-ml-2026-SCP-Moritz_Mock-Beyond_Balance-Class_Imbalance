@@ -16,3 +16,5 @@ logs
 *.err
 *.out
 .coverage
+
+run_all_t.batch

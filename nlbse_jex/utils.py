@@ -365,3 +365,6 @@ def parse_args():
     parser.add_argument("--coba-config", type=str2json, default=DEFAULT_COBA_CONFIG)
 
     return parser
+
+def isDynamic(v):
+    return v in ["FAMO", "COBA"]
