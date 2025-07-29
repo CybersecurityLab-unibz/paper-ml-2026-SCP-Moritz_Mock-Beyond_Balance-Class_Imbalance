@@ -15,11 +15,6 @@ results
 logs
 *.err
 *.out
-<<<<<<< HEAD
-
-# thomas
-myenv
-run_all_t.batch
-=======
 .coverage
->>>>>>> main
+
+run_all_t.batch
