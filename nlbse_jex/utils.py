@@ -313,6 +313,7 @@ DEFAULT_FAMO_CONFIG = {
     "w_lr": 0.025,  
     "max_norm": 1.0, 
 }
+
 DEFAULT_COBA_CONFIG = {
     "coba_warmup_steps": 100,
     "coba_tau": 5,
