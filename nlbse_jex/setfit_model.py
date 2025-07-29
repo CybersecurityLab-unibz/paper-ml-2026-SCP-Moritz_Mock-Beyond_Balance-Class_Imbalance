@@ -195,7 +195,7 @@ class SetFitModels(DataHandler):
             use_contrastive_head=False,
             custom_loss_weight=self.custom_loss_weight,
             weighted_loss_strategy=self.args.weighted_loss_strategy,
-            num_classes=self.num_classes
+            num_classes=self.num_classes,
             isDynamic=self.isDynamic
         )
 

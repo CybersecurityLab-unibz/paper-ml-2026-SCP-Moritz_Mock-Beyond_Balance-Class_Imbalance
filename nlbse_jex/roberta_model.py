@@ -32,7 +32,7 @@ class WeightedBCELoss(nn.Module):
 
 
 class CustomTrainer(Trainer):
-    def __init__(self, *args, custom_loss=None,dynamic_weight_loss=None,num_classes=None, isDynamic=False **kwargs):
+    def __init__(self, *args, custom_loss=None,dynamic_weight_loss=None,num_classes=None, isDynamic=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.custom_loss = custom_loss
         self.dynamic_weight_loss = dynamic_weight_loss
