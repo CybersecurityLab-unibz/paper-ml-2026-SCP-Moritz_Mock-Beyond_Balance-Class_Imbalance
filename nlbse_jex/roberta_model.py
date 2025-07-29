@@ -16,7 +16,7 @@ class WeightedBCELoss(nn.Module):
         self.custom_loss_weight = torch.tensor(custom_loss_weight, device=device)
         self.bce = nn.BCEWithLogitsLoss(reduction="none")
 
-    def forward(self, logits, labels,update_loss_weight=None):
+    def forward(self, logits, labels,update_loss_weight=None,scalar = False):
         if update_loss_weight is not None:
             self.custom_loss_weight = update_loss_weight
         logits = logits.to(device)
@@ -25,7 +25,10 @@ class WeightedBCELoss(nn.Module):
         loss = self.bce(logits, labels)  # Calculate unweighted BCE loss
 
         weighted_loss = loss * self.custom_loss_weight  # Apply weights to each label's loss
-        return weighted_loss.mean()
+
+        if scalar:
+            return weighted_loss.mean()
+        return weighted_loss
 
 
 class CustomTrainer(Trainer):
@@ -49,8 +52,8 @@ class CustomTrainer(Trainer):
             with torch.no_grad():
                 self.dynamic_weight_loss.get_weighted_loss(loss.mean(0))
                 update_loss_weight = self.dynamic_weight_loss._get_weight()
-            
-        loss = self.custom_loss(logits, labels,update_loss_weight)
+           
+        loss = self.custom_loss(logits, labels,update_loss_weight,scalar= True)
 
         if self.dynamc:
             with torch.no_grad():

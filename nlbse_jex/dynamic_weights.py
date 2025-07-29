@@ -255,13 +255,15 @@ class COBA(WeightMethod):
     def get_weighted_loss(self, losses):
         if self.completed_steps >= self.coba_warmup_steps:
             self.w = self.compute_per_task_weight()
-        print(self.w)
-        loss = losses * self.w
-        return loss.sum()
+
+        if isinstance(self.w, tuple):
+            self.w = self.w[0]
+
+        weighted_losses = losses * self.w
+        return weighted_losses.sum()
 
     def update(self, curr_loss):
         self.completed_steps += 1
-        print(curr_loss)
         self.history_task_valid_loss = torch.cat([
             self.history_task_valid_loss,
             curr_loss.unsqueeze(1)  # shape (n_tasks, 1)
