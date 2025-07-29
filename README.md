@@ -6,7 +6,8 @@ pip install . && nlbse_jex --weighted-loss FAMO \
 --test ../data/data/NLBSE25/pharo/pharo_test.csv \
 --column-key-text combo \
 --column-key-label labels \
---freeze-embeddings True
+--freeze-embeddings True \
+--model-path sentence-transformers/paraphrase-MiniLM-L6-v2
 
 pip install . && nlbse_jex --weighted-loss FAMO \
 --train ../data/data/NLBSE25/pharo/pharo_train.csv \
