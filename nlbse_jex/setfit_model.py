@@ -3,6 +3,7 @@ import setfit
 from sentence_transformers import SentenceTransformer
 from nlbse_jex.data_handler import DataHandler
 from nlbse_jex.utils import compute_metrics_setfit
+from nlbse_jex.dynamic_weights import WeightMethods
 import warnings
 from typing import Dict, List, Optional, Union, Any
 import torch
@@ -64,9 +65,17 @@ class CustomTrainer(setfit.Trainer):
 
 
 class CustomSetFitModel(setfit.SetFitModel):
-    def __init__(self, *args, custom_loss=None, **kwargs):
+    def __init__(self, *args, custom_loss_weight=None, weighted_loss_strategy='EW', num_classes=1, isDynamic=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.custom_loss = torch.tensor(custom_loss, device=self.device) # take device from parent class
+        self.weighted_loss_strategy = weighted_loss_strategy
+        self.custom_loss_weight = torch.tensor(custom_loss_weight, device=self.device) # take device from parent class
+        self.num_classes = num_classes
+        self.isDynamic = isDynamic
+
+    def loss_selection(self):
+        if self.isDynamic:
+            return torch.nn.BCEWithLogitsLoss(reduction="none")
+        return nn.CrossEntropyLoss(weight=self.custom_loss_weight)
 
     def fit(
         self,
@@ -103,13 +112,20 @@ class CustomSetFitModel(setfit.SetFitModel):
         """
         self.model_body.train()
         self.model_head.train()
-        if not end_to_end:
+        if not end_to_end: 
             self.freeze("body")
 
         dataloader = self._prepare_dataloader(x_train, y_train, batch_size, max_length)
-        criterion = nn.CrossEntropyLoss(weight=self.custom_loss) # changed from self.model_head.get_loss_fn()
+        criterion = self.loss_selection() # changed from self.model_head.get_loss_fn()
         optimizer = self._prepare_optimizer(head_learning_rate, body_learning_rate, l2_weight)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
+        if self.isDynamic:
+            dynamic_weight_loss = WeightMethods(
+                method=self.weighted_loss_strategy,
+                n_tasks=self.num_classes,
+                device=self.device
+            )
+        
         for epoch_idx in trange(num_epochs, desc="Epoch", disable=not show_progress_bar):
             for batch in tqdm(dataloader, desc="Iteration", disable=not show_progress_bar, leave=False):
                 features, labels = batch
@@ -126,10 +142,18 @@ class CustomSetFitModel(setfit.SetFitModel):
                     )
                 outputs = self.model_head(outputs)
                 logits = outputs["logits"]
-
                 loss: torch.Tensor = criterion(logits, labels)
-                loss.backward()
+
+                if self.isDynamic:
+                    dynamic_weight_loss.backward(loss.mean(0))
+                else:
+                    loss.backward()
                 optimizer.step()
+
+                if self.isDynamic:
+                    with torch.no_grad():
+                        new_loss = criterion(logits, labels)
+                        dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
 
             scheduler.step()
 
@@ -157,13 +181,22 @@ class SetFitModels(DataHandler):
             multitarget=False
         )
 
+        if self.isDynamic:
+            self.custom_loss_weight = torch.ones(self.num_classes)
+        else:
+            self.custom_loss_weight = torch.tensor([weight[1] for weight in self.class_weight_dicts])
+
+
         self.model = CustomSetFitModel(
             model_body=model_body,
             model_head=model_head,
             multi_target_strategy="multi-output",
             use_differentiable_head=True,
             use_contrastive_head=False,
-            custom_loss=[weight[1] for weight in self.class_weight_dicts]
+            custom_loss_weight=self.custom_loss_weight,
+            weighted_loss_strategy=self.args.weighted_loss_strategy,
+            num_classes=self.num_classes
+            isDynamic=self.isDynamic
         )
 
         self.logger.info("Model Defined!")
