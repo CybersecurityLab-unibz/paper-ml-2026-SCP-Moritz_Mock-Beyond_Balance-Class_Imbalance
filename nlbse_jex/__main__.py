@@ -6,6 +6,9 @@ from nlbse_jex.utils import read_files_weighted_loss_strategy
 from nlbse_jex.utils import generate_base_config
 from nlbse_jex.utils import read_config
 from nlbse_jex.proxy import Proxy
+from nlbse_jex.utils import validate_config
+from nlbse_jex.utils import DEFAULT_FAMO_CONFIG
+from nlbse_jex.utils import DEFAULT_COBA_CONFIG
 
 logging.basicConfig(
     format='%(asctime)s - %(message)s',
@@ -27,6 +30,8 @@ def main():
         args = read_config(args, parser)
         logging.info(args)
 
+    args.famo_config = validate_config(args.famo_config, DEFAULT_FAMO_CONFIG)
+    args.coba_config = validate_config(args.coba_config, DEFAULT_COBA_CONFIG)
 
     args = read_files_weighted_loss_strategy(args)
 
