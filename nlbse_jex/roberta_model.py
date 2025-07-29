@@ -32,11 +32,11 @@ class WeightedBCELoss(nn.Module):
 
 
 class CustomTrainer(Trainer):
-    def __init__(self, *args, custom_loss=None,dynamic_weight_loss=None,num_classes=None, **kwargs):
+    def __init__(self, *args, custom_loss=None,dynamic_weight_loss=None,num_classes=None, isDynamic=False **kwargs):
         super().__init__(*args, **kwargs)
         self.custom_loss = custom_loss
         self.dynamic_weight_loss = dynamic_weight_loss
-        self.dynamc = self.dynamic_weight_loss is not None
+        self.isDynamic = isDynamic
         self.num_classes=num_classes
         self.update_loss_weight=None
 
@@ -48,14 +48,14 @@ class CustomTrainer(Trainer):
         logits = outputs.logits
         loss = self.custom_loss(logits, labels)
 
-        if self.dynamc:
+        if self.isDynamic:
             with torch.no_grad():
                 self.dynamic_weight_loss.get_weighted_loss(loss.mean(0))
                 update_loss_weight = self.dynamic_weight_loss._get_weight()
            
         loss = self.custom_loss(logits, labels,update_loss_weight,scalar= True)
 
-        if self.dynamc:
+        if self.isDynamic:
             with torch.no_grad():
                 new_loss = self.custom_loss(logits, labels,update_loss_weight)
                 self.dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
@@ -76,9 +76,6 @@ class RoBERTaModels(DataHandler):
         self.model = None
         self.trainer = None
         self.custom_loss = None
-        self.dynamc = self.args.weighted_loss_strategy in ["FAMO", "COBA"]
-        
-
 
 
     def tokenize(self, batch):
@@ -98,7 +95,7 @@ class RoBERTaModels(DataHandler):
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id) # TODO tokenizer is not loaded properly, if it is a local path; from huggingface directly all is fine
 
-        if self.dynamc:
+        if self.isDynamic:
             self.custom_loss_weight = torch.ones(self.num_classes,device=device)
             self.dynamic_weight_loss = WeightMethods(
                 method=self.args.weighted_loss_strategy,
@@ -146,7 +143,8 @@ class RoBERTaModels(DataHandler):
             data_collator=data_collator,
             compute_metrics=compute_metrics_roberta,
             dynamic_weight_loss=self.dynamic_weight_loss,
-            num_classes=self.num_classes
+            num_classes=self.num_classes,
+            isDynamic=self.isDynamic
         )
 
         self.logger.info("Trainer Created!")

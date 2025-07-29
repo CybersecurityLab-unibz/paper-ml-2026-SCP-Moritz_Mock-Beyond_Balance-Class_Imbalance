@@ -17,6 +17,7 @@ from nlbse_jex.utils import generate_base_config
 from nlbse_jex.utils import load_yaml_config
 from nlbse_jex.utils import import_function_from_path
 from nlbse_jex.utils import validate_config
+from nlbse_jex.utils import isDynamic
 from unittest.mock import patch
 import os
 import filecmp
@@ -257,11 +258,14 @@ class TestUtils(unittest.TestCase):
             str2json("not a json")
 
     def test_validate_config(self):
-
         self.assertEqual(DEFAULT_COBA_CONFIG, validate_config({}, DEFAULT_COBA_CONFIG))
         self.assertEqual(DEFAULT_COBA_CONFIG, validate_config({'coba_warmup_steps': 100}, DEFAULT_COBA_CONFIG))
         with self.assertRaises(ValueError) as context:
             validate_config({'coba_warmup_steps': "100"}, DEFAULT_COBA_CONFIG)
         with self.assertRaises(ValueError) as context:
             validate_config({'test': "100"}, DEFAULT_COBA_CONFIG)
+
+    def test_isDynamic(self):
+        self.assertEqual(True, isDynamic("FAMO"))
+        self.assertEqual(False, isDynamic("NOT FAMO"))
 

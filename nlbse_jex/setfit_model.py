@@ -65,15 +65,15 @@ class CustomTrainer(setfit.Trainer):
 
 
 class CustomSetFitModel(setfit.SetFitModel):
-    def __init__(self, *args, custom_loss_weight=None, weighted_loss_strategy='EW', num_classes=1,**kwargs):
+    def __init__(self, *args, custom_loss_weight=None, weighted_loss_strategy='EW', num_classes=1, isDynamic=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.weighted_loss_strategy = weighted_loss_strategy
         self.custom_loss_weight = torch.tensor(custom_loss_weight, device=self.device) # take device from parent class
         self.num_classes = num_classes
-        self.dynamc = self.weighted_loss_strategy in ["FAMO", "COBA"]
+        self.isDynamic = isDynamic
 
     def loss_selection(self):
-        if self.dynamc:
+        if self.isDynamic:
             return torch.nn.BCEWithLogitsLoss(reduction="none")
         return nn.CrossEntropyLoss(weight=self.custom_loss_weight)
 
@@ -119,7 +119,7 @@ class CustomSetFitModel(setfit.SetFitModel):
         criterion = self.loss_selection() # changed from self.model_head.get_loss_fn()
         optimizer = self._prepare_optimizer(head_learning_rate, body_learning_rate, l2_weight)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
-        if self.dynamc:
+        if self.isDynamic:
             dynamic_weight_loss = WeightMethods(
                 method=self.weighted_loss_strategy,
                 n_tasks=self.num_classes,
@@ -144,13 +144,13 @@ class CustomSetFitModel(setfit.SetFitModel):
                 logits = outputs["logits"]
                 loss: torch.Tensor = criterion(logits, labels)
 
-                if self.dynamc:
+                if self.isDynamic:
                     dynamic_weight_loss.backward(loss.mean(0))
                 else:
                     loss.backward()
                 optimizer.step()
 
-                if self.dynamc:
+                if self.isDynamic:
                     with torch.no_grad():
                         new_loss = criterion(logits, labels)
                         dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
@@ -181,7 +181,7 @@ class SetFitModels(DataHandler):
             multitarget=False
         )
 
-        if self.dynamc:
+        if self.isDynamic:
             self.custom_loss_weight = torch.ones(self.num_classes)
         else:
             self.custom_loss_weight = torch.tensor([weight[1] for weight in self.class_weight_dicts])
@@ -196,6 +196,7 @@ class SetFitModels(DataHandler):
             custom_loss_weight=self.custom_loss_weight,
             weighted_loss_strategy=self.args.weighted_loss_strategy,
             num_classes=self.num_classes
+            isDynamic=self.isDynamic
         )
 
         self.logger.info("Model Defined!")

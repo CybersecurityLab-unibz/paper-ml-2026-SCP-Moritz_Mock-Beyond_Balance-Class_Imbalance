@@ -12,6 +12,7 @@ from nlbse_jex.linear_weights import LinearWeights
 from nlbse_jex.utils import copy_all_files
 from nlbse_jex.utils import recursively_delete_all_files
 from nlbse_jex.utils import find_function_callable
+from nlbse_jex.utils import isDynamic
 
 dataset_id = 'NLBSE/nlbse25-code-comment-classification'
 
@@ -30,7 +31,7 @@ class DataHandler():
         self.best_model = None
         self.csv_path = None
         self.dataset_name = None
-        self.dynamc = self.args.weighted_loss_strategy in ["FAMO", "COBA"]
+        self.isDynamic = isDynamic(self.args.weighted_loss_strategy)
         self.read_data()
         self.create_paths()
         self.set_seed(42)
@@ -224,7 +225,7 @@ class DataHandler():
     def calculate_weights(self):
         self.num_classes = len(self.data_train["label"][0])
         
-        if not self.dynamc:
+        if not self.isDynamic:
             self.class_weight_dicts = []
             self.logger.info(self.args)
             linear_weights = LinearWeights(self.args.weighted_loss_strategy, self.data_train["label"])
