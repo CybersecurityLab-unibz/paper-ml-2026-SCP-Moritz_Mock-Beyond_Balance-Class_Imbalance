@@ -181,13 +181,19 @@ class SetFitModels(DataHandler):
             multitarget=False
         )
 
+        if self.dynamc:
+            self.custom_loss_weight = torch.ones(self.num_classes)
+        else:
+            self.custom_loss_weight = torch.tensor([weight[1] for weight in self.class_weight_dicts])
+
+
         self.model = CustomSetFitModel(
             model_body=model_body,
             model_head=model_head,
             multi_target_strategy="multi-output",
             use_differentiable_head=True,
             use_contrastive_head=False,
-            custom_loss_weight=[weight[1] for weight in self.class_weight_dicts],
+            custom_loss_weight=self.custom_loss_weight,
             weighted_loss_strategy=self.args.weighted_loss_strategy,
             num_classes=self.num_classes
         )
