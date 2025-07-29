@@ -63,6 +63,8 @@ def main():
         args.weight_decay = combination[3]
         args.weighted_loss_strategy = combination[4]
 
+        logging.info(args)
+
         logging.info(f"Execution number {index + 1} out of {len(combinations)}")
 
 

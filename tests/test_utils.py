@@ -49,6 +49,7 @@ class TestUtils(unittest.TestCase):
             '--weighted-loss-strategy', f'{self.path_prefix}/dummy_data/test_function.py',
             '--train', 'dummy_data/pathon_train.csv',
             '--test', 'dummy_data/pathon_test.csv',
+            '--lr', '1e-2',
             '--column-key-text', 'combo',
             '--column-key-label', 'labels',
             '--config-path', self.default_config_path
@@ -94,6 +95,13 @@ class TestUtils(unittest.TestCase):
 
     def test_read_config_invalid_value(self):
         data = {"epoch": [-1]}
+        generate_base_config(self.default_config_path, data)
+        parser = parse_args()
+        args = parser.parse_args()
+        with self.assertRaises(ValueError):
+            read_config(args, parser)
+
+        data = {"lr": [-0.1]}
         generate_base_config(self.default_config_path, data)
         parser = parse_args()
         args = parser.parse_args()
