@@ -309,11 +309,16 @@ def positive_value(input_value):
 
 
 DEFAULT_FAMO_CONFIG = {
-    "gamma": 0.01
+    "gamma": 0.01,
+    "w_lr": 0.025,  
+    "max_norm": 1.0, 
 }
 DEFAULT_COBA_CONFIG = {
     "coba_warmup_steps": 100,
-    "coba_tau": 5
+    "coba_tau": 5,
+    "coba_history_length": 200,
+    "coba_update_interval": 1,
+    "coba_sample_valid_num": 1,
 }
 
 
