@@ -9,7 +9,7 @@ import random
 import torch
 
 from nlbse_jex.linear_weights import LinearWeights
-from nlbse_jex.utils import copy_all_files
+from nlbse_jex.utils import copy_all_files, get_device
 from nlbse_jex.utils import recursively_delete_all_files
 from nlbse_jex.utils import find_function_callable
 from nlbse_jex.utils import isDynamic
@@ -31,6 +31,7 @@ class DataHandler():
         self.best_model = None
         self.csv_path = None
         self.dataset_name = None
+        self.device = get_device()
         self.isDynamic = isDynamic(self.args.weighted_loss_strategy)
         self.read_data()
         self.create_paths()

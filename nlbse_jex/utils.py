@@ -314,6 +314,11 @@ def positive_value_float(v):
     return casted_value
 
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+def get_device():
+    return device
+
+
 DEFAULT_FAMO_CONFIG = {
     "gamma": 0.01,
     "w_lr": 0.025,  

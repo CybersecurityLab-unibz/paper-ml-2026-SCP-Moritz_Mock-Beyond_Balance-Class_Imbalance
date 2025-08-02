@@ -1,68 +1,15 @@
 from transformers import AutoTokenizer
 from nlbse_jex.data_handler import DataHandler
-from transformers import RobertaTokenizer, RobertaForSequenceClassification, Trainer, TrainingArguments, \
+from transformers import RobertaForSequenceClassification, TrainingArguments, \
     DataCollatorWithPadding
-import torch, torch.nn as nn
-import numpy as np
+import torch
 import os
+
+from nlbse_jex.roberta_models.WeightedBCELoss import WeightedBCELoss
+from nlbse_jex.roberta_models.roberta_trainer import RoBERTaTrainer
 from nlbse_jex.utils import compute_metrics_roberta
-from nlbse_jex.dynamic_weights import WeightMethods
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-class WeightedBCELoss(nn.Module):
-    def __init__(self,custom_loss_weight):
-        super(WeightedBCELoss, self).__init__()
-        self.custom_loss_weight = torch.tensor(custom_loss_weight, device=device)
-        self.bce = nn.BCEWithLogitsLoss(reduction="none")
-
-    def forward(self, logits, labels,update_loss_weight=None,scalar = False):
-        if update_loss_weight is not None:
-            self.custom_loss_weight = update_loss_weight
-        logits = logits.to(device)
-        labels = labels.to(device)
-
-        loss = self.bce(logits, labels)  # Calculate unweighted BCE loss
-
-        weighted_loss = loss * self.custom_loss_weight  # Apply weights to each label's loss
-
-        if scalar:
-            return weighted_loss.mean()
-        return weighted_loss
-
-
-class CustomTrainer(Trainer):
-    def __init__(self, *args, custom_loss=None,dynamic_weight_loss=None,num_classes=None, isDynamic=False, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.custom_loss = custom_loss
-        self.dynamic_weight_loss = dynamic_weight_loss
-        self.isDynamic = isDynamic
-        self.num_classes=num_classes
-        self.update_loss_weight=None
-
-    def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
-        labels = inputs.pop("labels").float().to(device)
-        inputs = {k: v.to(device) for k, v in inputs.items()}
-        
-        outputs = model(**inputs)
-        logits = outputs.logits
-        loss = self.custom_loss(logits, labels)
-
-        if self.isDynamic:
-            with torch.no_grad():
-                self.dynamic_weight_loss.get_weighted_loss(loss.mean(0))
-                update_loss_weight = self.dynamic_weight_loss._get_weight()
-           
-        loss = self.custom_loss(logits, labels,update_loss_weight,scalar= True)
-
-        if self.isDynamic:
-            with torch.no_grad():
-                new_loss = self.custom_loss(logits, labels,update_loss_weight)
-                self.dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
-
-        return (loss, outputs) if return_outputs else loss
-
-
+from nlbse_jex.dynamic_weights.weight_methods import WeightMethods
+from nlbse_jex.utils import get_device
 
 
 class RoBERTaModels(DataHandler):
@@ -96,11 +43,11 @@ class RoBERTaModels(DataHandler):
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id) # TODO tokenizer is not loaded properly, if it is a local path; from huggingface directly all is fine
 
         if self.isDynamic:
-            self.custom_loss_weight = torch.ones(self.num_classes,device=device)
+            self.custom_loss_weight = torch.ones(self.num_classes,device=self.device)
             self.dynamic_weight_loss = WeightMethods(
                 method=self.args.weighted_loss_strategy,
                 n_tasks=self.num_classes,
-                device=device
+                device=self.device
             )
         else:
             self.custom_loss_weight = torch.tensor([weight[1] for weight in self.class_weight_dicts])
@@ -109,7 +56,7 @@ class RoBERTaModels(DataHandler):
 
         self.model = RobertaForSequenceClassification.from_pretrained(self.model_id, num_labels=self.num_classes)
         self.model.config.problem_type = "multi_label_classification"
-        self.model = self.model.to(device)
+        self.model = self.model.to(get_device())
 
         self.logger.info("Model Defined!")
 
@@ -134,7 +81,7 @@ class RoBERTaModels(DataHandler):
 
         data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
 
-        self.trainer = CustomTrainer(
+        self.trainer = RoBERTaTrainer(
             model=self.model,
             args=args,
             train_dataset=self.data_train.select(range(50)), #TODO remove range

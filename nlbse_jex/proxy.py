@@ -2,8 +2,8 @@ import os
 import json
 from huggingface_hub import model_info
 from huggingface_hub.utils import HfHubHTTPError
-from nlbse_jex.roberta_model import RoBERTaModels
-from nlbse_jex.setfit_model import SetFitModels
+from nlbse_jex.roberta_models.roberta_models import RoBERTaModels
+from nlbse_jex.setfit_models.setfit_models import SetFitModels
 import logging
 
 class Proxy():
