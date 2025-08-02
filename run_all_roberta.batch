@@ -51,7 +51,7 @@ MODEL=$3
 # EW ICF RBF FAMO COBA
 
 nlbse_jex \
-  --weighted-loss FAMO \\ 
+  --weighted-loss FAMO \
   --epoch 5 10 \
   --train data/${DATASET}/${LANGUAGE}/${LANGUAGE}_train.csv \
   --test data/${DATASET}/${LANGUAGE}/${LANGUAGE}_test.csv \
