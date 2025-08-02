@@ -34,17 +34,18 @@ class COBA(WeightMethod):
         self.n_tasks = n_tasks
         self.completed_steps = 0
         self.minimum_weight = 1 / (n_tasks * 10)
+        self.dtype = torch.float64 if self.device.type != "mps" else torch.float32
 
 
     def compute_per_task_weight(self):
         task_num = self.n_tasks
-        task_slope_fitting = torch.ones(task_num, dtype=torch.float64,device=self.device)
+        task_slope_fitting = torch.ones(task_num, dtype=self.dtype,device=self.device)
         start_step = max(0, self.completed_steps // self.coba_update_interval - self.coba_history_length)
         history_steps = torch.arange(start_step, self.completed_steps, 1,device=self.device)
         for i in range(task_num):
             per_task_history_valid_loss = self.history_task_valid_loss[i][-len(history_steps):]
             task_slope_fitting[i] = self.fit_window_slope(
-                history_steps, per_task_history_valid_loss, type="slope"
+                history_steps, per_task_history_valid_loss, type="slope",
             )
         history_total_valid_loss, index = torch.max(self.history_task_valid_loss[:, -len(history_steps):], dim=0)
         total_slope_fitting = self.fit_window_slope(
@@ -94,14 +95,14 @@ class COBA(WeightMethod):
         x = torch.index_select(x, 0, nonzero_index)
 
         ws = torch.flip(1 ** torch.arange(len(y)), dims=[0])
-        ws = ws.double().to(self.device)
+        ws = ws.float().to(self.device) if self.device.type == "mps" else ws.double().to(self.device)
 
         if len(y) >= 2:
             if type == "slope":
-                X = torch.stack((x, torch.ones_like(x, dtype=torch.float64,device=self.device))).T
-                X = X.double()
+                X = torch.stack((x, torch.ones_like(x, dtype=self.dtype,device=self.device))).T
+                X = X.float() if self.device.type == "mps" else X.double()
             else:
-                X = torch.stack((x ** 2, x, torch.ones_like(x, dtype=torch.float64,device=self.device))).T
+                X = torch.stack((x ** 2, x, torch.ones_like(x, dtype=self.dtype,device=self.device))).T
                 
             w = torch.linalg.solve(X.T @ (ws[:, None] * X), X.T @ (ws * y))
 
