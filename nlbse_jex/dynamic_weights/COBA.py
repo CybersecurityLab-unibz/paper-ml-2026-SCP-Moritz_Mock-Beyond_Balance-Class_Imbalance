@@ -37,9 +37,9 @@ class COBA(WeightMethod):
 
     def compute_per_task_weight(self):
         task_num = self.n_tasks
-        task_slope_fitting = torch.ones(task_num, dtype=torch.float64)
+        task_slope_fitting = torch.ones(task_num, dtype=torch.float64,device=self.device)
         start_step = max(0, self.completed_steps // self.coba_update_interval - self.coba_history_length)
-        history_steps = torch.arange(start_step, self.completed_steps, 1)
+        history_steps = torch.arange(start_step, self.completed_steps, 1,device=self.device)
         for i in range(task_num):
             per_task_history_valid_loss = self.history_task_valid_loss[i][-len(history_steps):]
             task_slope_fitting[i] = self.fit_window_slope(
@@ -88,21 +88,20 @@ class COBA(WeightMethod):
 
         y = y[y != 0]
         x = x[:len(y)]
-
-        nonzero_index = torch.squeeze(torch.nonzero(y), dim=1)
+        nonzero_index = torch.squeeze(torch.nonzero(y), dim=1).to(self.device)
         y = torch.index_select(y, 0, nonzero_index)
         x = torch.index_select(x, 0, nonzero_index)
 
         ws = torch.flip(1 ** torch.arange(len(y)), dims=[0])
-        ws = ws.double()
+        ws = ws.double().to(self.device)
 
         if len(y) >= 2:
             if type == "slope":
-                X = torch.stack((x, torch.ones_like(x, dtype=torch.float64))).T
+                X = torch.stack((x, torch.ones_like(x, dtype=torch.float64,device=self.device))).T
                 X = X.double()
             else:
-                X = torch.stack((x ** 2, x, torch.ones_like(x, dtype=torch.float64))).T
-
+                X = torch.stack((x ** 2, x, torch.ones_like(x, dtype=torch.float64,device=self.device))).T
+                
             w = torch.linalg.solve(X.T @ (ws[:, None] * X), X.T @ (ws * y))
 
             result = w[0]

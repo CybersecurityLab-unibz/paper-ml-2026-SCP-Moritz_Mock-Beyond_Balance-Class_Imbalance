@@ -48,13 +48,15 @@ LANGUAGE=$1
 DATASET=$2
 MODEL=$3
 
+# EW ICF RBF FAMO COBA
+
 nlbse_jex \
-  --weighted-loss EW ICF RBF \
+  --weighted-loss FAMO \
   --epoch 5 10 \
   --train data/${DATASET}/${LANGUAGE}/${LANGUAGE}_train.csv \
   --test data/${DATASET}/${LANGUAGE}/${LANGUAGE}_test.csv \
-  --batch-size 8 16 32 \
-  --lr 1e-2 1e-3 \
+  --batch-size 1 2 4 8 \
+  --lr 3e-5 4e-5 5e-5 \
   --weight-decay 0 0.01 0.001 \
   --column-key-text combo \
   --column-key-label labels \
