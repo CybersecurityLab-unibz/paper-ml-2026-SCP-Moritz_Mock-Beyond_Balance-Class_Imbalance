@@ -2,7 +2,6 @@ import torch
 from torch.nn import functional as F
 
 from nlbse_jex.dynamic_weights.weight_method import WeightMethod
-from nlbse_jex.utils import get_device
 
 
 ##############################################################
@@ -16,14 +15,14 @@ class COBA(WeightMethod):
     def __init__(
         self,
         n_tasks: int,
-        device: get_device(),
+        device: torch.device,
         coba_warmup_steps=100,
         coba_history_length=200,
         coba_tau=5,
         coba_update_interval=1,
         coba_sample_valid_num=1,
     ):
-        self.device = device
+        super().__init__(n_tasks, device)
         self.coba_warmup_steps = coba_warmup_steps
         self.coba_history_length = coba_history_length
         self.coba_tau = coba_tau
