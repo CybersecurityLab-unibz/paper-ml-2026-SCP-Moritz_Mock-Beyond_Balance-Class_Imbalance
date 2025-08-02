@@ -314,7 +314,7 @@ def positive_value_float(v):
     return casted_value
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("mps" if torch.backends.mps.is_available() and torch.backends.mps.is_built() else "cuda:0" if torch.cuda.is_available() else "cpu")
 def get_device():
     return device
 

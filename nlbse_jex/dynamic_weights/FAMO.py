@@ -2,6 +2,7 @@ import torch
 from torch.nn import functional as F
 
 from nlbse_jex.dynamic_weights.weight_method import WeightMethod
+from nlbse_jex.utils import get_device
 
 
 ##########################################################
@@ -15,7 +16,7 @@ class FAMO(WeightMethod):
     def __init__(
         self,
         n_tasks: int,
-        device: torch.device,
+        device: get_device(),
         gamma: float = 0.01,   # the regularization coefficient
         w_lr: float = 0.025,   # the learning rate of the task logits
         max_norm: float = 1.0, # the maximum gradient norm
@@ -25,7 +26,6 @@ class FAMO(WeightMethod):
         self.w_opt = torch.optim.Adam([self.w], lr=w_lr, weight_decay=gamma)
         self.max_norm = max_norm
         self.n_tasks = n_tasks
-        self.device = device
 
     def set_min_losses(self, losses):
         self.min_losses = losses
