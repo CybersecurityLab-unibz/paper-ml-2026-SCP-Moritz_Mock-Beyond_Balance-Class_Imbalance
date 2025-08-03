@@ -14,6 +14,31 @@ class RoBERTaTrainer(Trainer):
         isDynamic=False,
         **kwargs,
     ):
+        """
+        Initializes the RoBERTaTrainer with support for custom and dynamic loss strategies.
+
+        This constructor:
+            - Passes standard arguments to the base trainer class
+            - Stores references to:
+                - `custom_loss`: the loss function to be used during training
+                - `dynamic_weight_loss`: optional dynamic loss weighting strategy
+                - `isDynamic`: flag indicating whether dynamic loss adjustment is enabled
+                - `num_classes`: number of target classes for classification
+            - Initializes `update_loss_weight` to None
+            - Sets the computation device (CPU, CUDA, or MPS)
+
+        Parameters:
+            *args: Positional arguments passed to the base trainer.
+            custom_loss (Callable): A custom loss function for multi-label classification.
+            dynamic_weight_loss (Optional[Callable]): A dynamic weighting strategy object (e.g., FAMO or COBA).
+            num_classes (Optional[int]): The number of output classes.
+            isDynamic (bool): Whether dynamic class weighting is enabled.
+            **kwargs: Additional keyword arguments passed to the base trainer.
+
+        Returns:
+            None
+        """
+
         super().__init__(*args, **kwargs)
         self.custom_loss = custom_loss
         self.dynamic_weight_loss = dynamic_weight_loss
@@ -25,6 +50,29 @@ class RoBERTaTrainer(Trainer):
     def compute_loss(
         self, model, inputs, return_outputs=False, num_items_in_batch=None
     ):
+        """
+        Computes the custom loss for a batch of inputs, with optional support for dynamic weighting strategies.
+
+        This method:
+            - Extracts and moves input tensors and labels to the appropriate device
+            - Computes logits by forwarding inputs through the model
+            - Calculates the initial loss using the custom loss function
+            - If dynamic weighting is enabled:
+                - Updates the dynamic weights based on the current loss
+                - Recomputes the scalar loss using updated weights
+                - Updates the dynamic weighting strategy's internal state
+            - Returns the loss and optionally the model outputs
+
+        Parameters:
+            model (nn.Module): The model used to compute logits.
+            inputs (dict): A dictionary of batched input tensors, including 'labels'.
+            return_outputs (bool): If True, also returns the model outputs.
+            num_items_in_batch (int or None): (Unused) Can be used for future extension if needed.
+
+        Returns:
+            torch.Tensor or Tuple[torch.Tensor, Any]: The computed loss, and optionally the model outputs.
+        """
+
         labels = inputs.pop("labels").float().to(self.device)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 

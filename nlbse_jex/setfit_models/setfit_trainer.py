@@ -6,6 +6,17 @@ import setfit
 
 class SetFitTrainer(setfit.Trainer):
     def __init__(self, freeze_embeddings=False, **kwargs):
+        """
+        Initializes the model with support for optionally freezing embeddings during training.
+
+        Parameters:
+            freeze_embeddings (bool): If True, prevents updates to embedding weights during training.
+            **kwargs: Additional keyword arguments passed to the parent class (setfit.Trainer).
+
+        Returns:
+            None
+        """
+
         super().__init__(**kwargs)
         self.freeze_embeddings = freeze_embeddings
 

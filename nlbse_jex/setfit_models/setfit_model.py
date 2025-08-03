@@ -9,6 +9,7 @@ from nlbse_jex.dynamic_weights.weight_methods import WeightMethods
 
 
 class SetFitModel(setfit.SetFitModel):
+
     def __init__(
         self,
         *args,
@@ -18,6 +19,27 @@ class SetFitModel(setfit.SetFitModel):
         isDynamic=False,
         **kwargs,
     ):
+        """
+        Initializes a model class with support for static or dynamic weighted loss strategies.
+
+        This constructor:
+            - Passes all positional and keyword arguments to the superclass
+            - Stores the loss strategy and whether it is dynamic
+            - Initializes and moves the custom class weights tensor to the appropriate device
+            - Stores the number of output classes
+
+        Parameters:
+            *args: Positional arguments passed to the parent class.
+            custom_loss_weight (Iterable[float] or Tensor): Class-specific weights for the loss function.
+            weighted_loss_strategy (str or Callable): The selected loss weighting strategy (e.g., "EW", "ICF", or a callable).
+            num_classes (int): The number of output classes.
+            isDynamic (bool): Whether the model uses a dynamic weighting strategy.
+            **kwargs: Additional keyword arguments passed to the parent class.
+
+        Returns:
+            None
+        """
+
         super().__init__(*args, **kwargs)
         self.weighted_loss_strategy = weighted_loss_strategy
         self.custom_loss_weight = torch.tensor(
@@ -27,6 +49,17 @@ class SetFitModel(setfit.SetFitModel):
         self.isDynamic = isDynamic
 
     def loss_selection(self):
+        """
+        Selects and returns the appropriate loss function based on whether dynamic weighting is used.
+
+        This method:
+            - Returns `BCEWithLogitsLoss` with no reduction if dynamic loss weighting is enabled (`isDynamic` is True)
+            - Returns `CrossEntropyLoss` with predefined class weights if static weighting is used
+
+        Returns:
+            torch.nn.Module: The selected loss function instance.
+        """
+
         if self.isDynamic:
             return torch.nn.BCEWithLogitsLoss(reduction="none")
         return nn.CrossEntropyLoss(weight=self.custom_loss_weight)
