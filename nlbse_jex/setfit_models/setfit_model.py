@@ -9,10 +9,20 @@ from nlbse_jex.dynamic_weights.weight_methods import WeightMethods
 
 
 class SetFitModel(setfit.SetFitModel):
-    def __init__(self, *args, custom_loss_weight=None, weighted_loss_strategy='EW', num_classes=1, isDynamic=False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        custom_loss_weight=None,
+        weighted_loss_strategy="EW",
+        num_classes=1,
+        isDynamic=False,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.weighted_loss_strategy = weighted_loss_strategy
-        self.custom_loss_weight = torch.tensor(custom_loss_weight, device=self.device) # take device from parent class
+        self.custom_loss_weight = torch.tensor(
+            custom_loss_weight, device=self.device
+        )  # take device from parent class
         self.num_classes = num_classes
         self.isDynamic = isDynamic
 
@@ -60,18 +70,24 @@ class SetFitModel(setfit.SetFitModel):
             self.freeze("body")
 
         dataloader = self._prepare_dataloader(x_train, y_train, batch_size, max_length)
-        criterion = self.loss_selection() # changed from self.model_head.get_loss_fn()
-        optimizer = self._prepare_optimizer(head_learning_rate, body_learning_rate, l2_weight)
+        criterion = self.loss_selection()  # changed from self.model_head.get_loss_fn()
+        optimizer = self._prepare_optimizer(
+            head_learning_rate, body_learning_rate, l2_weight
+        )
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
         if self.isDynamic:
             dynamic_weight_loss = WeightMethods(
                 method=self.weighted_loss_strategy,
                 n_tasks=self.num_classes,
-                device=self.device
+                device=self.device,
             )
 
-        for epoch_idx in trange(num_epochs, desc="Epoch", disable=not show_progress_bar):
-            for batch in tqdm(dataloader, desc="Iteration", disable=not show_progress_bar, leave=False):
+        for epoch_idx in trange(
+            num_epochs, desc="Epoch", disable=not show_progress_bar
+        ):
+            for batch in tqdm(
+                dataloader, desc="Iteration", disable=not show_progress_bar, leave=False
+            ):
                 features, labels = batch
                 optimizer.zero_grad()
 

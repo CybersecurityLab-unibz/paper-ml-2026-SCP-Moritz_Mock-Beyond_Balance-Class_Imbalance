@@ -22,13 +22,19 @@ from unittest.mock import patch
 import os
 import filecmp
 
+
 def compare_folders(dir1, dir2):
     if not os.path.isdir(dir2):
         return False
 
     comparison = filecmp.dircmp(dir1, dir2)
 
-    if comparison.left_only or comparison.right_only or comparison.diff_files or comparison.funny_files:
+    if (
+        comparison.left_only
+        or comparison.right_only
+        or comparison.diff_files
+        or comparison.funny_files
+    ):
         return False
     else:
         for subdir in comparison.common_dirs:
@@ -42,18 +48,32 @@ def compare_folders(dir1, dir2):
 class TestUtils(unittest.TestCase):
 
     def setUp(self):
-        self.path_prefix = os.getcwd() if os.getcwd().split("/")[-1] == "tests" else os.path.join(os.getcwd(), "tests")
-        self.default_config_path = f'{self.path_prefix}/dummy_data/dummy_config.yml'
-        self.patcher = patch('sys.argv', [
-            'program_name',
-            '--weighted-loss-strategy', f'{self.path_prefix}/dummy_data/test_function.py',
-            '--train', 'dummy_data/pathon_train.csv',
-            '--test', 'dummy_data/pathon_test.csv',
-            '--lr', '1e-2',
-            '--column-key-text', 'combo',
-            '--column-key-label', 'labels',
-            '--config-path', self.default_config_path
-        ])
+        self.path_prefix = (
+            os.getcwd()
+            if os.getcwd().split("/")[-1] == "tests"
+            else os.path.join(os.getcwd(), "tests")
+        )
+        self.default_config_path = f"{self.path_prefix}/dummy_data/dummy_config.yml"
+        self.patcher = patch(
+            "sys.argv",
+            [
+                "program_name",
+                "--weighted-loss-strategy",
+                f"{self.path_prefix}/dummy_data/test_function.py",
+                "--train",
+                "dummy_data/pathon_train.csv",
+                "--test",
+                "dummy_data/pathon_test.csv",
+                "--lr",
+                "1e-2",
+                "--column-key-text",
+                "combo",
+                "--column-key-label",
+                "labels",
+                "--config-path",
+                self.default_config_path,
+            ],
+        )
 
         self.patcher.start()
 
@@ -67,17 +87,16 @@ class TestUtils(unittest.TestCase):
         yml = load_yaml_config(self.default_config_path)
         self.assertEqual(data, yml)
 
-
     def test_read_config_does_not_exists(self):
         parser = parse_args()
         args = parser.parse_args()
-        args.config_path = f'{self.path_prefix}/dummy_data/does_not_exists.yml'
+        args.config_path = f"{self.path_prefix}/dummy_data/does_not_exists.yml"
         with self.assertRaises(FileNotFoundError):
             read_config(args, parser)
 
     def test_read_config_empty_config(self):
-        path = f'{self.path_prefix}/dummy_data/dummy_config_empty.yml'
-        open(path, 'w').close()
+        path = f"{self.path_prefix}/dummy_data/dummy_config_empty.yml"
+        open(path, "w").close()
         parser = parse_args()
         args = parser.parse_args()
         args.config_path = path
@@ -129,7 +148,6 @@ class TestUtils(unittest.TestCase):
         yml = read_config(args, parser)
         self.assertEqual(yml.maximise_model, True)
 
-
         data = {"maximise_model": "TURE"}
         generate_base_config(self.default_config_path, data)
         parser = parse_args()
@@ -165,7 +183,9 @@ class TestUtils(unittest.TestCase):
         function = import_function_from_path(args.weighted_loss_strategy[0])
         data = [[0, 1, 0]]
         weights = function(data)
-        self.assertEqual(weights, [{1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}])
+        self.assertEqual(
+            weights, [{1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}, {1: 0.1, 0: 0.9}]
+        )
 
     def test_read_files_weighted_loss_strategy(self):
         args = parse_args().parse_args()
@@ -178,8 +198,8 @@ class TestUtils(unittest.TestCase):
             find_function_callable(args.weighted_loss_strategy, "own_function")
 
     def test_import_function_error(self):
-        path = f'{self.path_prefix}/dummy_data/my_function.py'
-        open(path, 'w').write("")
+        path = f"{self.path_prefix}/dummy_data/my_function.py"
+        open(path, "w").write("")
         with self.assertRaises(ValueError):
             get_first_function_name(path)
 
@@ -205,7 +225,6 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(0.5, metrics["class_1_recall"])
         self.assertEqual(0.6666666666666666, metrics["class_1_f1"])
 
-
     def test_compute_metrics_setfit(self):
         labels = [[0, 1], [0, 1]]
         preds = [1, 0]
@@ -228,7 +247,9 @@ class TestUtils(unittest.TestCase):
 
     def test_compute_metrics_roberta(self):
         labels = np.array([[0, 1], [0, 1]])
-        logits = np.array([[-0.1, 1], [1, -0.1]]) # sigmoid converts into [[0.4750, 0.7311], [0.7311, 0.4750]], which is translated to [[0, 1], [1, 0]] using the threshold of 0.5
+        logits = np.array(
+            [[-0.1, 1], [1, -0.1]]
+        )  # sigmoid converts into [[0.4750, 0.7311], [0.7311, 0.4750]], which is translated to [[0, 1], [1, 0]] using the threshold of 0.5
         metrics = compute_metrics_roberta((logits, labels))
 
         self.assertEqual(0, metrics["class_0_true_positives"])
@@ -247,8 +268,8 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(0.6666666666666666, metrics["class_1_f1"])
 
     def test_copy_all_files_and_delete_them(self):
-        path_source = f'{self.path_prefix}/dummy_data'
-        path_target = f'{self.path_prefix}/depth_level/dummy_data_copy'
+        path_source = f"{self.path_prefix}/dummy_data"
+        path_target = f"{self.path_prefix}/depth_level/dummy_data_copy"
 
         copy_all_files(path_source, path_target)
 
@@ -267,13 +288,15 @@ class TestUtils(unittest.TestCase):
 
     def test_validate_config(self):
         self.assertEqual(DEFAULT_COBA_CONFIG, validate_config({}, DEFAULT_COBA_CONFIG))
-        self.assertEqual(DEFAULT_COBA_CONFIG, validate_config({'coba_warmup_steps': 100}, DEFAULT_COBA_CONFIG))
+        self.assertEqual(
+            DEFAULT_COBA_CONFIG,
+            validate_config({"coba_warmup_steps": 100}, DEFAULT_COBA_CONFIG),
+        )
         with self.assertRaises(ValueError) as context:
-            validate_config({'coba_warmup_steps': "100"}, DEFAULT_COBA_CONFIG)
+            validate_config({"coba_warmup_steps": "100"}, DEFAULT_COBA_CONFIG)
         with self.assertRaises(ValueError) as context:
-            validate_config({'test': "100"}, DEFAULT_COBA_CONFIG)
+            validate_config({"test": "100"}, DEFAULT_COBA_CONFIG)
 
     def test_isDynamic(self):
         self.assertEqual(True, isDynamic("FAMO"))
         self.assertEqual(False, isDynamic("NOT FAMO"))
-

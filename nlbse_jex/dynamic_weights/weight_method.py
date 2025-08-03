@@ -19,7 +19,7 @@ class WeightMethod:
         pass
 
     @abstractmethod
-    def _get_weight(self,**kwargs):
+    def _get_weight(self, **kwargs):
         pass
 
     def update(self, **kwargs):

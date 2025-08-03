@@ -17,11 +17,11 @@ class WeightMethods:
 
     def get_weighted_loss(self, losses, **kwargs):
         return self.method.get_weighted_loss(losses, **kwargs)
-    
-    def _get_weight(self,**kwargs):
+
+    def _get_weight(self, **kwargs):
         return self.method._get_weight(**kwargs)
-    
-    def update(self,**kwargs):
+
+    def update(self, **kwargs):
         return self.method.update(**kwargs)
 
     def backward(
@@ -34,11 +34,6 @@ class WeightMethods:
 
     def parameters(self):
         return self.method.parameters()
-    
 
 
-METHODS = dict(
-    FAMO =FAMO,
-    COBA =COBA,
-    ln =LinearScalarization
-)
+METHODS = dict(FAMO=FAMO, COBA=COBA, ln=LinearScalarization)

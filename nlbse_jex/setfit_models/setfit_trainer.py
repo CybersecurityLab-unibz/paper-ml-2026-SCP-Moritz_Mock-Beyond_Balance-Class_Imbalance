@@ -34,7 +34,9 @@ class SetFitTrainer(setfit.Trainer):
             )
 
         if trial:  # Trial and model initialization
-            self._hp_search_setup(trial)  # sets trainer parameters and initializes model
+            self._hp_search_setup(
+                trial
+            )  # sets trainer parameters and initializes model
 
         args = args or self.args or setfit.TrainingArguments()
 
@@ -48,7 +50,9 @@ class SetFitTrainer(setfit.Trainer):
         # Added the following if statement
         if self.freeze_embeddings is False:
             full_parameters = (
-                train_parameters + self.dataset_to_parameters(self.eval_dataset) if self.eval_dataset else train_parameters
+                train_parameters + self.dataset_to_parameters(self.eval_dataset)
+                if self.eval_dataset
+                else train_parameters
             )
 
             self.train_embeddings(*full_parameters, args=args)
