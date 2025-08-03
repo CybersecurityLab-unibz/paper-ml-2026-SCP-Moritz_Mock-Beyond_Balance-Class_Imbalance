@@ -28,3 +28,7 @@ python -m unittest discover -s tests
 pip install coverage
 
 coverage run -m unittest discover -s tests && coverage report
+
+
+setup hook 
+pip install flake8==7.3.0
