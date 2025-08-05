@@ -137,7 +137,7 @@ class RoBERTaModels(DataHandler):
         self.trainer = CustomTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train.select(range(50)), #TODO remove range
+            train_dataset=self.data_train, #.select(range(50)), #TODO remove range
             eval_dataset=self.data_test,
             custom_loss=self.custom_loss,
             data_collator=data_collator,
