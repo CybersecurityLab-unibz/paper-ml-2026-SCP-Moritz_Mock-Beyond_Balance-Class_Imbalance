@@ -104,6 +104,7 @@ class RoBERTaModels(DataHandler):
             )
         else:
             self.custom_loss_weight = torch.tensor([weight[1] for weight in self.class_weight_dicts])
+            self.dynamic_weight_loss = None
 
         self.custom_loss = WeightedBCELoss(self.custom_loss_weight)
 
