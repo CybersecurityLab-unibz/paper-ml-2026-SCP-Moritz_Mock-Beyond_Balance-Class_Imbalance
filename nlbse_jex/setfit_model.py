@@ -86,12 +86,6 @@ class CustomSetFitModel(setfit.SetFitModel):
         self.num_classes = num_classes
         self.isDynamic = isDynamic
 
-    def loss_selection(self):
-        # if self.isDynamic:
-        #    return torch.nn.BCEWithLogitsLoss(reduction="none")
-        # return nn.CrossEntropyLoss(weight=self.custom_loss_weight)
-        return torch.nn.BCEWithLogitsLoss(reduction="none")
-
     def fit(
         self,
         x_train: List[str],
@@ -131,17 +125,20 @@ class CustomSetFitModel(setfit.SetFitModel):
             self.freeze("body")
 
         dataloader = self._prepare_dataloader(x_train, y_train, batch_size, max_length)
-        criterion = self.loss_selection()  # changed from self.model_head.get_loss_fn()
+        criterion = torch.nn.BCEWithLogitsLoss(
+            reduction="none"
+        )  # changed from self.model_head.get_loss_fn()
         optimizer = self._prepare_optimizer(
             head_learning_rate, body_learning_rate, l2_weight
         )
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
-        if self.isDynamic:
-            dynamic_weight_loss = WeightMethods(
-                method=self.weighted_loss_strategy,
-                n_tasks=self.num_classes,
-                device=self.device,
-            )
+
+        dynamic_weight_loss = WeightMethods(
+            method=self.weighted_loss_strategy,
+            n_tasks=self.num_classes,
+            device=self.device,
+            isDynamic=self.isDynamic,
+        )
 
         for epoch_idx in trange(
             num_epochs, desc="Epoch", disable=not show_progress_bar
@@ -165,18 +162,12 @@ class CustomSetFitModel(setfit.SetFitModel):
                 logits = outputs["logits"]
                 loss: torch.Tensor = criterion(logits, labels)
 
-                if self.isDynamic:
-                    dynamic_weight_loss.backward(loss.mean(0))
-                else:
-                    loss = loss * self.custom_loss_weight
-                    loss = loss.mean()
-                    loss.backward()
+                dynamic_weight_loss.backward(loss)
+
                 optimizer.step()
 
-                if self.isDynamic:
-                    with torch.no_grad():
-                        new_loss = criterion(logits, labels)
-                        dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
+                with torch.no_grad():
+                    dynamic_weight_loss.update(curr_loss=criterion(logits, labels))
 
             scheduler.step()
 
@@ -242,7 +233,7 @@ class SetFitModels(DataHandler):
         self.trainer = CustomTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train,  # .select(range(50)), #TODO remove range
+            train_dataset=self.data_train.select(range(50)),  # TODO remove range
             eval_dataset=self.data_test,
             metric=compute_metrics_setfit,
             freeze_embeddings=self.args.freeze_embeddings,
