@@ -1,7 +1,7 @@
 command to build and run a dummy script
 
 
-pip install . && nlbse_jex --weighted-loss FAMO \
+pip install . && nlbse_jex --weighted-loss EW \
 --train ./data/NLBSE25/pharo/pharo_train.csv \
 --test ./data/NLBSE25/pharo/pharo_test.csv \
 --column-key-text combo \
