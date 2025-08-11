@@ -162,12 +162,14 @@ class CustomSetFitModel(setfit.SetFitModel):
                 logits = outputs["logits"]
                 loss: torch.Tensor = criterion(logits, labels)
 
-                dynamic_weight_loss.backward(loss)
+                dynamic_weight_loss.backward(loss.mean(0))
 
                 optimizer.step()
 
                 with torch.no_grad():
-                    dynamic_weight_loss.update(curr_loss=criterion(logits, labels))
+                    dynamic_weight_loss.update(
+                        curr_loss=criterion(logits, labels).mean(0)
+                    )
 
             scheduler.step()
 

@@ -298,7 +298,6 @@ class COBA(WeightMethod):
         return weighted_losses.sum()
 
     def update(self, curr_loss):
-        curr_loss = curr_loss.mean(0)
         self.completed_steps += 1
         self.history_task_valid_loss = torch.cat(
             [
