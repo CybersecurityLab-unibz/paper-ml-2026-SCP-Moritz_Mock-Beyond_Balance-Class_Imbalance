@@ -42,7 +42,9 @@ class CustomTrainer(setfit.Trainer):
             )
 
         if trial:  # Trial and model initialization
-            self._hp_search_setup(trial)  # sets trainer parameters and initializes model
+            self._hp_search_setup(
+                trial
+            )  # sets trainer parameters and initializes model
 
         args = args or self.args or setfit.TrainingArguments()
 
@@ -56,7 +58,9 @@ class CustomTrainer(setfit.Trainer):
         # Added the following if statement
         if self.freeze_embeddings is False:
             full_parameters = (
-                train_parameters + self.dataset_to_parameters(self.eval_dataset) if self.eval_dataset else train_parameters
+                train_parameters + self.dataset_to_parameters(self.eval_dataset)
+                if self.eval_dataset
+                else train_parameters
             )
 
             self.train_embeddings(*full_parameters, args=args)
@@ -65,17 +69,22 @@ class CustomTrainer(setfit.Trainer):
 
 
 class CustomSetFitModel(setfit.SetFitModel):
-    def __init__(self, *args, custom_loss_weight=None, weighted_loss_strategy='EW', num_classes=1, isDynamic=False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        custom_loss_weight=None,
+        weighted_loss_strategy="EW",
+        num_classes=1,
+        isDynamic=False,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.weighted_loss_strategy = weighted_loss_strategy
-        self.custom_loss_weight = torch.tensor(custom_loss_weight, device=self.device) # take device from parent class
+        self.custom_loss_weight = torch.tensor(
+            custom_loss_weight, device=self.device
+        )  # take device from parent class
         self.num_classes = num_classes
         self.isDynamic = isDynamic
-
-    def loss_selection(self):
-        if self.isDynamic:
-            return torch.nn.BCEWithLogitsLoss(reduction="none")
-        return nn.CrossEntropyLoss(weight=self.custom_loss_weight)
 
     def fit(
         self,
@@ -112,22 +121,31 @@ class CustomSetFitModel(setfit.SetFitModel):
         """
         self.model_body.train()
         self.model_head.train()
-        if not end_to_end: 
+        if not end_to_end:
             self.freeze("body")
 
         dataloader = self._prepare_dataloader(x_train, y_train, batch_size, max_length)
-        criterion = self.loss_selection() # changed from self.model_head.get_loss_fn()
-        optimizer = self._prepare_optimizer(head_learning_rate, body_learning_rate, l2_weight)
+        criterion = torch.nn.BCEWithLogitsLoss(
+            reduction="none"
+        )  # changed from self.model_head.get_loss_fn()
+        optimizer = self._prepare_optimizer(
+            head_learning_rate, body_learning_rate, l2_weight
+        )
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.5)
-        if self.isDynamic:
-            dynamic_weight_loss = WeightMethods(
-                method=self.weighted_loss_strategy,
-                n_tasks=self.num_classes,
-                device=self.device
-            )
-        
-        for epoch_idx in trange(num_epochs, desc="Epoch", disable=not show_progress_bar):
-            for batch in tqdm(dataloader, desc="Iteration", disable=not show_progress_bar, leave=False):
+
+        dynamic_weight_loss = WeightMethods(
+            method=self.weighted_loss_strategy,
+            n_tasks=self.num_classes,
+            device=self.device,
+            isDynamic=self.isDynamic,
+        )
+
+        for epoch_idx in trange(
+            num_epochs, desc="Epoch", disable=not show_progress_bar
+        ):
+            for batch in tqdm(
+                dataloader, desc="Iteration", disable=not show_progress_bar, leave=False
+            ):
                 features, labels = batch
                 optimizer.zero_grad()
 
@@ -143,17 +161,14 @@ class CustomSetFitModel(setfit.SetFitModel):
                 outputs = self.model_head(outputs)
                 logits = outputs["logits"]
                 loss: torch.Tensor = criterion(logits, labels)
+                dynamic_weight_loss.backward(loss.mean(0))
 
-                if self.isDynamic:
-                    dynamic_weight_loss.backward(loss.mean(0))
-                else:
-                    loss.backward()
                 optimizer.step()
 
-                if self.isDynamic:
-                    with torch.no_grad():
-                        new_loss = criterion(logits, labels)
-                        dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
+                with torch.no_grad():
+                    dynamic_weight_loss.update(
+                        curr_loss=criterion(logits, labels).mean(0)
+                    )
 
             scheduler.step()
 
@@ -165,7 +180,8 @@ class SetFitModels(DataHandler):
 
     def __init__(self, args):
         super().__init__(args)
-        if self.args.maximise_model: super().find_best_args()
+        if self.args.maximise_model:
+            super().find_best_args()
         super().calculate_weights()
         self.model_id = self.args.model_path
         self.model = None
@@ -178,14 +194,15 @@ class SetFitModels(DataHandler):
         model_head = setfit.SetFitHead(
             in_features=model_body.get_sentence_embedding_dimension(),
             out_features=self.num_classes,
-            multitarget=False
+            multitarget=False,
         )
 
         if self.isDynamic:
             self.custom_loss_weight = torch.ones(self.num_classes)
         else:
-            self.custom_loss_weight = torch.tensor([weight[1] for weight in self.class_weight_dicts])
-
+            self.custom_loss_weight = torch.tensor(
+                [weight[1] for weight in self.class_weight_dicts]
+            )
 
         self.model = CustomSetFitModel(
             model_body=model_body,
@@ -196,7 +213,7 @@ class SetFitModels(DataHandler):
             custom_loss_weight=self.custom_loss_weight,
             weighted_loss_strategy=self.args.weighted_loss_strategy,
             num_classes=self.num_classes,
-            isDynamic=self.isDynamic
+            isDynamic=self.isDynamic,
         )
 
         self.logger.info("Model Defined!")
@@ -208,19 +225,19 @@ class SetFitModels(DataHandler):
             batch_size=self.args.batch_size,
             num_epochs=self.args.epoch,
             head_learning_rate=self.args.lr,
-            l2_weight=self.args.weight_decay, # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
+            l2_weight=self.args.weight_decay,  # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
             save_strategy="epoch",
             save_total_limit=1,
-            num_iterations=20 # as default in setfit 1.0.0
+            num_iterations=20,  # as default in setfit 1.0.0
         )
 
         self.trainer = CustomTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train, #.select(range(50)), #TODO remove range
+            train_dataset=self.data_train,  # .select(range(50)), #TODO remove range
             eval_dataset=self.data_test,
             metric=compute_metrics_setfit,
-            freeze_embeddings=self.args.freeze_embeddings
+            freeze_embeddings=self.args.freeze_embeddings,
         )
 
         self.logger.info("Trainer Created!")
@@ -228,7 +245,10 @@ class SetFitModels(DataHandler):
     def train(self):
         self.trainer.train()
         self.model.model_body.save(os.path.join(self.output_path, "model_body"))
-        torch.save(self.model.model_head.state_dict(), os.path.join(self.output_path, "model_head.pt"))
+        torch.save(
+            self.model.model_head.state_dict(),
+            os.path.join(self.output_path, "model_head.pt"),
+        )
         with open(os.path.join(self.output_path, "training_args.yaml"), "w") as f:
             yaml.dump(vars(self.args), f)
 
@@ -237,4 +257,3 @@ class SetFitModels(DataHandler):
         self.logger.info(metrics)
         self.summarize_metrics(metrics)
         self.update_csv(metrics)
-
