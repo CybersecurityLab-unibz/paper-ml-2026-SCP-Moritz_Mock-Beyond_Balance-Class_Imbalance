@@ -109,9 +109,7 @@ class RoBERTaModels(DataHandler):
 
     def initialize(self):
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_id
-        )  # TODO tokenizer is not loaded properly, if it is a local path; from huggingface directly all is fine
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
 
         self.custom_loss_weight = (
             torch.ones(self.num_classes, device=device)
