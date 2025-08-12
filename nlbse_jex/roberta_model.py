@@ -113,17 +113,17 @@ class RoBERTaModels(DataHandler):
             self.model_id
         )  # TODO tokenizer is not loaded properly, if it is a local path; from huggingface directly all is fine
 
-        if self.isDynamic:
-            self.custom_loss_weight = torch.ones(self.num_classes, device=device)
-            self.dynamic_weight_loss = WeightMethods(
-                method=self.args.weighted_loss_strategy,
-                n_tasks=self.num_classes,
-                device=device,
-            )
-        else:
-            self.custom_loss_weight = torch.tensor(
-                [weight[1] for weight in self.class_weight_dicts]
-            )
+        self.custom_loss_weight = (
+            torch.ones(self.num_classes, device=device)
+            if self.isDynamic
+            else torch.tensor([weight[1] for weight in self.class_weight_dicts])
+        )
+        self.dynamic_weight_loss = WeightMethods(
+            method=self.args.weighted_loss_strategy,
+            n_tasks=self.num_classes,
+            device=device,
+            isDynamic=self.isDynamic,
+        )
 
         self.custom_loss = WeightedBCELoss(self.custom_loss_weight)
 
