@@ -161,7 +161,6 @@ class CustomSetFitModel(setfit.SetFitModel):
                 outputs = self.model_head(outputs)
                 logits = outputs["logits"]
                 loss: torch.Tensor = criterion(logits, labels)
-
                 dynamic_weight_loss.backward(loss.mean(0))
 
                 optimizer.step()
@@ -235,7 +234,7 @@ class SetFitModels(DataHandler):
         self.trainer = CustomTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train.select(range(50)),  # TODO remove range
+            train_dataset=self.data_train,  # .select(range(50)), #TODO remove range
             eval_dataset=self.data_test,
             metric=compute_metrics_setfit,
             freeze_embeddings=self.args.freeze_embeddings,

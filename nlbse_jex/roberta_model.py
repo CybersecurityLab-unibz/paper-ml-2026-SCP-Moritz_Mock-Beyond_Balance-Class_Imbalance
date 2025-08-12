@@ -61,7 +61,6 @@ class CustomTrainer(Trainer):
     ):
         labels = inputs.pop("labels").float().to(device)
         inputs = {k: v.to(device) for k, v in inputs.items()}
-
         outputs = model(**inputs)
         logits = outputs.logits
         loss = self.custom_loss(logits, labels)
@@ -69,13 +68,13 @@ class CustomTrainer(Trainer):
         if self.isDynamic:
             with torch.no_grad():
                 self.dynamic_weight_loss.get_weighted_loss(loss.mean(0))
-                update_loss_weight = self.dynamic_weight_loss._get_weight()
+                self.update_loss_weight = self.dynamic_weight_loss._get_weight()
 
-        loss = self.custom_loss(logits, labels, update_loss_weight, scalar=True)
+        loss = self.custom_loss(logits, labels, self.update_loss_weight, scalar=True)
 
         if self.isDynamic:
             with torch.no_grad():
-                new_loss = self.custom_loss(logits, labels, update_loss_weight)
+                new_loss = self.custom_loss(logits, labels, self.update_loss_weight)
                 self.dynamic_weight_loss.update(curr_loss=new_loss.mean(0))
 
         return (loss, outputs) if return_outputs else loss
@@ -161,7 +160,7 @@ class RoBERTaModels(DataHandler):
         self.trainer = CustomTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train,
+            train_dataset=self.data_train,  # .select(range(50)), #TODO remove range
             eval_dataset=self.data_test,
             custom_loss=self.custom_loss,
             data_collator=data_collator,
@@ -179,7 +178,6 @@ class RoBERTaModels(DataHandler):
 
     def eval(self):
         metrics = self.trainer.evaluate()
-
         metrics = {
             (k.replace("eval_", "") if k.startswith("eval_") else k): v
             for k, v in metrics.items()
