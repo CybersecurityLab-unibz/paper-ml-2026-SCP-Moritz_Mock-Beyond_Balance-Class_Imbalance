@@ -12,10 +12,9 @@ import argparse
 import torch
 import json
 
+
 def read_files_weighted_loss_strategy(args):
-    args_ok = {
-        "labels": "placeholder"
-    }
+    args_ok = {"labels": "placeholder"}
 
     for index, wl in enumerate(args.weighted_loss_strategy):
         if wl.endswith(".py"):
@@ -25,6 +24,7 @@ def read_files_weighted_loss_strategy(args):
             args.weighted_loss_strategy[index] = function
 
     return args
+
 
 def can_pass_args_with_types(func, args_dict):
     sig = inspect.signature(func)
@@ -50,13 +50,14 @@ def can_pass_args_with_types(func, args_dict):
     # Check for to many args
     for p in params.values():
         if (
-            p.default is inspect.Parameter.empty and
-            p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY) and
-            p.name not in args_dict
+            p.default is inspect.Parameter.empty
+            and p.kind in (p.POSITIONAL_OR_KEYWORD, p.KEYWORD_ONLY)
+            and p.name not in args_dict
         ):
             mismatches.append(f"Unexpected argument '{p.name}'")
 
     return len(mismatches) == 0, mismatches
+
 
 def _is_instance_of(value, expected_type):
     """Support typing types like Union, List, etc."""
@@ -87,8 +88,9 @@ def _is_instance_of(value, expected_type):
 
     return isinstance(value, expected_type)
 
+
 def get_first_function_name(file_path):
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         node = ast.parse(f.read(), filename=file_path)
 
     for n in node.body:
@@ -118,12 +120,12 @@ def import_function_from_path(file_path):
 def str2bool(v):
     if isinstance(v, bool):
         return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
-        raise ValueError('Boolean value expected.')
+        raise ValueError("Boolean value expected.")
 
 
 def str2json(value):
@@ -136,17 +138,18 @@ def str2json(value):
 
 
 def generate_base_config(path, data=None):
-    data = data if data is not None else {
-        'epoch': [1, 2, 5, 10],
-        'weighted_loss_strategy': ['EW']
-    }
+    data = (
+        data
+        if data is not None
+        else {"epoch": [1, 2, 5, 10], "weighted_loss_strategy": ["EW"]}
+    )
 
-    with open(path, 'w') as file:
+    with open(path, "w") as file:
         yaml.dump(data, file, default_flow_style=False)
 
 
 def load_yaml_config(config_path):
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         return yaml.safe_load(f)
 
 
@@ -165,21 +168,27 @@ def validate_and_cast_config(yaml_config, parser):
         # Handle nargs / list-type args
         if nargs is not None:
             if not isinstance(value, list):
-                raise ValueError(f"Expected a list for argument '{key}', but got {type(value).__name__}")
+                raise ValueError(
+                    f"Expected a list for argument '{key}', but got {type(value).__name__}"
+                )
 
             # Cast each element in the list
             if expected_type is not None:
                 try:
                     validated_config[key] = [expected_type(v) for v in value]
                 except Exception as e:
-                    raise ValueError(f"Type error in list for key '{key}': expected elements of type {expected_type.__name__}, got {value}")
+                    raise ValueError(
+                        f"Type error in list for key '{key}': expected elements of type {expected_type.__name__}, got {value}"
+                    )
 
         # Handle normal scalar args
         elif expected_type is not None:
             try:
                 validated_config[key] = expected_type(value)
             except Exception as e:
-                raise ValueError(f"Type error for key '{key}': expected {expected_type.__name__}, got {value} ({type(value).__name__})")
+                raise ValueError(
+                    f"Type error for key '{key}': expected {expected_type.__name__}, got {value} ({type(value).__name__})"
+                )
 
     return validated_config
 
@@ -198,7 +207,9 @@ def merge_config_with_args(yaml_config, cli_args, parser):
 def read_config(args, parser):
     raw_yaml = load_yaml_config(args.config_path)
     if raw_yaml is None:
-        logging.info(f"Provided file ({raw_yaml}) is empty, please specify a configuration!")
+        logging.info(
+            f"Provided file ({raw_yaml}) is empty, please specify a configuration!"
+        )
         return args
     yaml_config = validate_and_cast_config(raw_yaml, parser)
     return argparse.Namespace(**merge_config_with_args(yaml_config, args, parser))
@@ -219,6 +230,7 @@ def compute_metrics_setfit(preds, labels):
     preds = np.eye(num_classes)[preds]
 
     return compute_metrics(preds, labels, num_classes)
+
 
 def compute_metrics_roberta(eval_pred):
     # Unpack the predictions and labels
@@ -243,6 +255,7 @@ def compute_metrics_roberta(eval_pred):
 
     return compute_metrics(predictions, labels, labels.shape[1])
 
+
 def compute_metrics(preds, labels, num_classes):
     class_metrics = {}
     for class_idx in range(num_classes):
@@ -253,7 +266,11 @@ def compute_metrics(preds, labels, num_classes):
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        f1 = (
+            2 * (precision * recall) / (precision + recall)
+            if (precision + recall) > 0
+            else 0
+        )
 
         class_metrics[f"class_{class_idx}_true_positives"] = tp
         class_metrics[f"class_{class_idx}_false_positives"] = fp
@@ -295,10 +312,15 @@ def find_function_callable(candidates, function_name):
         raise ValueError("No weighted loss strategies provided.")
 
     for candidate in candidates:
-        if isinstance(candidate, types.FunctionType) and candidate.__name__ == function_name:
+        if (
+            isinstance(candidate, types.FunctionType)
+            and candidate.__name__ == function_name
+        ):
             return candidate
 
-    raise ValueError(f"The costume function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'.")
+    raise ValueError(
+        f"The costume function ({function_name}) was not passed! The path to the function needs to be added in for the argument 'weighted_loss_strategies'."
+    )
 
 
 def positive_value_int(v):
@@ -306,6 +328,7 @@ def positive_value_int(v):
     if casted_value < 0:
         raise argparse.ArgumentTypeError(f"{v} is not a positive integer")
     return casted_value
+
 
 def positive_value_float(v):
     casted_value = float(v)
@@ -316,8 +339,8 @@ def positive_value_float(v):
 
 DEFAULT_FAMO_CONFIG = {
     "gamma": 0.01,
-    "w_lr": 0.025,  
-    "max_norm": 1.0, 
+    "w_lr": 0.025,
+    "max_norm": 1.0,
 }
 
 DEFAULT_COBA_CONFIG = {
@@ -336,7 +359,8 @@ def validate_config(passed, default):
         if key in passed:
             if not isinstance(passed[key], type(default_val)):
                 raise ValueError(
-                    f"Type mismatch for '{key}': expected {type(default_val).__name__}, got {type(passed[key]).__name__}. Run stopped!")
+                    f"Type mismatch for '{key}': expected {type(default_val).__name__}, got {type(passed[key]).__name__}. Run stopped!"
+                )
             validated[key] = passed[key]
         else:
             validated[key] = default_val
@@ -347,23 +371,39 @@ def validate_config(passed, default):
 
     return validated
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--generate-base-config", type=str2bool, default=False)
     parser.add_argument("--config-path", type=str, default=None)
-    parser.add_argument("--weighted-loss-strategy", nargs="*", type=str, default=["EW", "test_function.py"])
-    parser.add_argument("--batch-size", nargs="*", type=positive_value_int, default=[32])
+    parser.add_argument(
+        "--weighted-loss-strategy",
+        nargs="*",
+        type=str,
+        default=["EW", "test_function.py"],
+    )
+    parser.add_argument(
+        "--batch-size", nargs="*", type=positive_value_int, default=[32]
+    )
     parser.add_argument("--epoch", nargs="*", type=positive_value_int, default=[5])
     parser.add_argument("--lr", nargs="*", type=positive_value_float, default=[1e-2])
-    parser.add_argument("--weight-decay", nargs="*", type=positive_value_float, default=[0])
+    parser.add_argument(
+        "--weight-decay", nargs="*", type=positive_value_float, default=[0]
+    )
     parser.add_argument("--train", required=True, type=str)
     parser.add_argument("--val", default=None, type=str)
     parser.add_argument("--test", required=True, type=str)
     parser.add_argument("--column-key-text", type=str, required=True)
     parser.add_argument("--column-key-label", type=str, required=True)
-    parser.add_argument("--save-model-instances", default="last", type=str, choices=["last", "all"])
-    parser.add_argument("--model-path", default="sentence-transformers/paraphrase-MiniLM-L6-v2", type=str)
+    parser.add_argument(
+        "--save-model-instances", default="last", type=str, choices=["last", "all"]
+    )
+    parser.add_argument(
+        "--model-path",
+        default="sentence-transformers/paraphrase-MiniLM-L6-v2",
+        type=str,
+    )
     parser.add_argument("--result-path", type=str, default=".")
     parser.add_argument("--maximise-model", type=str2bool, default=False)
     parser.add_argument("--freeze-embeddings", type=str2bool, default=False)
@@ -371,6 +411,7 @@ def parse_args():
     parser.add_argument("--coba-config", type=str2json, default=DEFAULT_COBA_CONFIG)
 
     return parser
+
 
 def isDynamic(v):
     return v in ["FAMO", "COBA"]

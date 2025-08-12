@@ -6,10 +6,11 @@ from nlbse_jex.roberta_model import RoBERTaModels
 from nlbse_jex.setfit_model import SetFitModels
 import logging
 
-class Proxy():
+
+class Proxy:
 
     def __init__(self, args):
-        self.logger = logging.getLogger('nlbse_jsx.proxy')
+        self.logger = logging.getLogger("nlbse_jsx.proxy")
         self.model_path = None
         self.model_type = None
         self.model = None
@@ -17,20 +18,28 @@ class Proxy():
         self.setfit_whitelist = ["bert", "mpnet"]
         self.roberta_whitelist = ["roberta"]
 
-    def _type_of_model(self) -> str|None:
+    def _type_of_model(self) -> str | None:
         if os.path.isdir(self.model_path):
             snapshots_dir = os.path.join(self.model_path, "snapshots")
             if os.path.isdir(snapshots_dir):
-                snapshots = [d for d in os.listdir(snapshots_dir)
-                             if not d.startswith(".") and os.path.isdir(os.path.join(snapshots_dir, d))]
+                snapshots = [
+                    d
+                    for d in os.listdir(snapshots_dir)
+                    if not d.startswith(".")
+                    and os.path.isdir(os.path.join(snapshots_dir, d))
+                ]
                 if snapshots:
-                    config_path = os.path.join(snapshots_dir, snapshots[0], "config.json")
+                    config_path = os.path.join(
+                        snapshots_dir, snapshots[0], "config.json"
+                    )
                     if os.path.isfile(config_path):
                         try:
                             with open(config_path, "r") as f:
                                 config = json.load(f)
                                 self.logger.info(self.args)
-                                self.args.model_path = os.path.join(snapshots_dir, snapshots[0])
+                                self.args.model_path = os.path.join(
+                                    snapshots_dir, snapshots[0]
+                                )
                                 self.logger.info(self.args)
                                 return config.get("model_type", "unknown")
                         except (json.JSONDecodeError, OSError):
@@ -54,16 +63,20 @@ class Proxy():
         elif self.model_type in self.setfit_whitelist:
             self.model = SetFitModels(self.args)
 
-        if self.model: self.model.initialize()
+        if self.model:
+            self.model.initialize()
 
     def create_trainer(self):
-        if self.model: self.model.create_trainer()
+        if self.model:
+            self.model.create_trainer()
 
     def train(self):
-        if self.model: self.model.train()
+        if self.model:
+            self.model.train()
 
     def eval(self):
-        if self.model: self.model.eval()
+        if self.model:
+            self.model.eval()
 
     def get_model_type(self):
         return self.model_type

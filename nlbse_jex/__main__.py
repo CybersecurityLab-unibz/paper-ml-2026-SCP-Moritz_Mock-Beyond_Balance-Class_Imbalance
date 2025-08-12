@@ -11,10 +11,9 @@ from nlbse_jex.utils import DEFAULT_FAMO_CONFIG
 from nlbse_jex.utils import DEFAULT_COBA_CONFIG
 
 logging.basicConfig(
-    format='%(asctime)s - %(message)s',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"
 )
+
 
 def main():
     parser = parse_args()
@@ -36,7 +35,6 @@ def main():
     args = read_files_weighted_loss_strategy(args)
 
     logging.info(args)
-
 
     if args.maximise_model:
         p = Proxy(args)
@@ -67,7 +65,6 @@ def main():
 
         logging.info(f"Execution number {index + 1} out of {len(combinations)}")
 
-
         p = Proxy(args)
         p.create_model()
 
@@ -88,9 +85,7 @@ def main():
             logging.error("Execution of the run was interrupted.")
             logging.error("--------------------")
 
-        #p.create_model("/leonardo/home/userexternal/mmock000/.cache/huggingface/hub/models--sentence-transformers--paraphrase-MiniLM-L6-v2/snapshots/c9a2bfebc254878aee8c3aca9e6844d5bbb102d1")
-
-
+        # p.create_model("/leonardo/home/userexternal/mmock000/.cache/huggingface/hub/models--sentence-transformers--paraphrase-MiniLM-L6-v2/snapshots/c9a2bfebc254878aee8c3aca9e6844d5bbb102d1")
 
 
 if __name__ == "__main__":
