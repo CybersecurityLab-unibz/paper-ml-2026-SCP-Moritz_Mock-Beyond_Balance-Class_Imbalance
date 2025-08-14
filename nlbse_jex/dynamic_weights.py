@@ -107,6 +107,7 @@ class FAMO(WeightMethod):
         gamma: float = 0.01,  # the regularization coefficient
         w_lr: float = 0.025,  # the learning rate of the task logits
         max_norm: float = 1.0,  # the maximum gradient norm
+        task_weights: Union[List[float], torch.Tensor] = None,
     ):
         self.min_losses = torch.zeros(n_tasks, device=device)
         self.w = torch.tensor([0.0] * n_tasks, device=device, requires_grad=True)
@@ -162,6 +163,7 @@ class COBA(WeightMethod):
         coba_tau=5,
         coba_update_interval=1,
         coba_sample_valid_num=1,
+        task_weights: Union[List[float], torch.Tensor] = None,
     ):
         self.coba_warmup_steps = coba_warmup_steps
         self.coba_history_length = coba_history_length

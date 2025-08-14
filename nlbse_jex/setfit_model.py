@@ -138,6 +138,7 @@ class CustomSetFitModel(setfit.SetFitModel):
             n_tasks=self.num_classes,
             device=self.device,
             isDynamic=self.isDynamic,
+            task_weights=self.custom_loss_weight
         )
 
         for epoch_idx in trange(
