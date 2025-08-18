@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=Test_DeepSeeker # job name in accounting
+#SBATCH --job-name=NLBSE_ROBERTA # job name in accounting
 #SBATCH --output=/data/users/momock/NLBSE_JEX/logs/%j.out # the standard output is written to this file
 #SBATCH --error=/data/users/momock/NLBSE_JEX/logs/%j.err # the standard error is written to this file
 #SBATCH --partition=gpu-low #cluster partition to use, you may not have access to this one
@@ -51,7 +51,7 @@ MODEL=$3
 # EW ICF RBF FAMO COBA
 
 nlbse_jex \
-  --weighted-loss FAMO \
+  --weighted-loss COBA \
   --epoch 5 10 \
   --train data/${DATASET}/${LANGUAGE}/${LANGUAGE}_train.csv \
   --test data/${DATASET}/${LANGUAGE}/${LANGUAGE}_test.csv \
