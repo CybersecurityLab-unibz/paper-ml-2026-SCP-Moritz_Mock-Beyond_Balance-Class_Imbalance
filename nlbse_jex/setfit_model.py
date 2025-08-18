@@ -208,7 +208,7 @@ class SetFitModels(DataHandler):
             in_features=model_body.get_sentence_embedding_dimension(),
             out_features=self.num_classes,
             multitarget=True,
-            # device="mps",  # TODO self.device
+            device="cuda",  # TODO self.device
         )
 
         if self.isDynamic:
