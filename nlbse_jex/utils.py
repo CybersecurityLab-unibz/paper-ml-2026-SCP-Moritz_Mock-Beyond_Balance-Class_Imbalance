@@ -227,7 +227,6 @@ def compute_metrics_setfit(preds, labels):
         labels = np.array(labels)
 
     num_classes = labels.shape[1]
-    preds = np.eye(num_classes)[preds]
 
     return compute_metrics(preds, labels, num_classes)
 

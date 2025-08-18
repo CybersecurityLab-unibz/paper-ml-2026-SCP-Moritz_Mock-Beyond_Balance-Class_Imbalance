@@ -138,7 +138,7 @@ class CustomSetFitModel(setfit.SetFitModel):
             n_tasks=self.num_classes,
             device=self.device,
             isDynamic=self.isDynamic,
-            task_weights=self.custom_loss_weight
+            task_weights=self.custom_loss_weight,
         )
 
         for epoch_idx in trange(
@@ -160,9 +160,24 @@ class CustomSetFitModel(setfit.SetFitModel):
                         outputs["sentence_embedding"], p=2, dim=1
                     )
                 outputs = self.model_head(outputs)
-                logits = outputs["logits"]
+                logits: torch.Tensor = outputs["logits"]
                 loss: torch.Tensor = criterion(logits, labels)
                 dynamic_weight_loss.backward(loss.mean(0))
+                if epoch_idx == 1:
+                    print("------------")
+                    print(logits)
+                    print(torch.softmax(logits, dim=1))
+                    print(torch.argmax(labels, dim=1))
+                    print("------------")
+                    print(
+                        torch.nn.CrossEntropyLoss().forward(
+                            torch.softmax(logits, dim=1), torch.argmax(labels, dim=1)
+                        )
+                    )
+                    print(loss.shape)
+                    print(loss.mean(0))
+                    print(loss.mean())
+                    quit()
 
                 optimizer.step()
 
@@ -195,7 +210,8 @@ class SetFitModels(DataHandler):
         model_head = setfit.SetFitHead(
             in_features=model_body.get_sentence_embedding_dimension(),
             out_features=self.num_classes,
-            multitarget=False,
+            multitarget=True,
+            # device="mps",  # TODO self.device
         )
 
         if self.isDynamic:
