@@ -163,21 +163,6 @@ class CustomSetFitModel(setfit.SetFitModel):
                 logits: torch.Tensor = outputs["logits"]
                 loss: torch.Tensor = criterion(logits, labels)
                 dynamic_weight_loss.backward(loss.mean(0))
-                if epoch_idx == 1:
-                    print("------------")
-                    print(logits)
-                    print(torch.softmax(logits, dim=1))
-                    print(torch.argmax(labels, dim=1))
-                    print("------------")
-                    print(
-                        torch.nn.CrossEntropyLoss().forward(
-                            torch.softmax(logits, dim=1), torch.argmax(labels, dim=1)
-                        )
-                    )
-                    print(loss.shape)
-                    print(loss.mean(0))
-                    print(loss.mean())
-                    quit()
 
                 optimizer.step()
 
@@ -190,6 +175,18 @@ class CustomSetFitModel(setfit.SetFitModel):
 
         if not end_to_end:
             self.unfreeze("body")
+
+
+class CustomSetFitHead(setfit.SetFitHead):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+        if self.in_features is not None:
+            self.linear = nn.Sequential(
+                nn.Linear(self.in_features, self.in_features, bias=self.bias),
+                nn.ReLU(),
+                nn.Linear(self.in_features, self.out_features, bias=self.bias),
+            )
 
 
 class SetFitModels(DataHandler):
@@ -207,7 +204,7 @@ class SetFitModels(DataHandler):
 
         model_body = SentenceTransformer(self.model_id)
 
-        model_head = setfit.SetFitHead(
+        model_head = CustomSetFitHead(
             in_features=model_body.get_sentence_embedding_dimension(),
             out_features=self.num_classes,
             multitarget=True,
