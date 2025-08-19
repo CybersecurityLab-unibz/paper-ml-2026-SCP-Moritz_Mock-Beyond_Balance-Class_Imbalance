@@ -112,21 +112,20 @@ class RoBERTaModels(DataHandler):
             None
         """
 
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_id
-        )  # TODO tokenizer is not loaded properly, if it is a local path; from huggingface directly all is fine
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
 
-        if self.isDynamic:
-            self.custom_loss_weight = torch.ones(self.num_classes, device=self.device)
-            self.dynamic_weight_loss = WeightMethods(
-                method=self.args.weighted_loss_strategy,
-                n_tasks=self.num_classes,
-                device=self.device,
-            )
-        else:
-            self.custom_loss_weight = torch.tensor(
-                [weight[1] for weight in self.class_weight_dicts]
-            )
+        self.custom_loss_weight = (
+            torch.ones(self.num_classes, device=self.device)
+            if self.isDynamic
+            else torch.tensor([weight[1] for weight in self.class_weight_dicts])
+        )
+        self.dynamic_weight_loss = WeightMethods(
+            method=self.args.weighted_loss_strategy,
+            n_tasks=self.num_classes,
+            device=self.device,
+            isDynamic=self.isDynamic,
+            task_weights=self.custom_loss_weight,
+        )
 
         self.custom_loss = WeightedBCELoss(self.custom_loss_weight)
 
@@ -134,7 +133,7 @@ class RoBERTaModels(DataHandler):
             self.model_id, num_labels=self.num_classes
         )
         self.model.config.problem_type = "multi_label_classification"
-        self.model = self.model.to(get_device())
+        self.model = self.model.to(self.device)
 
         self.logger.info("Model Defined!")
 

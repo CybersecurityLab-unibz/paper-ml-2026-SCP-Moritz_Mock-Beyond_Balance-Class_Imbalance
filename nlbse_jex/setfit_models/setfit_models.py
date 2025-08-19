@@ -3,6 +3,7 @@ import setfit
 from sentence_transformers import SentenceTransformer
 from nlbse_jex.data_handler import DataHandler
 from nlbse_jex.setfit_models.setfit_model import SetFitModel
+from nlbse_jex.setfit_models.setfit_head import SetFitHead
 from nlbse_jex.setfit_models.setfit_trainer import SetFitTrainer
 from nlbse_jex.utils import compute_metrics_setfit
 import torch
@@ -55,10 +56,12 @@ class SetFitModels(DataHandler):
 
         model_body = SentenceTransformer(self.model_id)
 
-        model_head = setfit.SetFitHead(
+        model_head = SetFitHead(
             in_features=model_body.get_sentence_embedding_dimension(),
             out_features=self.num_classes,
             multitarget=True,
+            device=self.device,
+            n_layer=self.args.n_layer,
         )
 
         if self.isDynamic:

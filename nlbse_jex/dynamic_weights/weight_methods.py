@@ -7,13 +7,15 @@ from nlbse_jex.dynamic_weights.linear_scalarization import LinearScalarization
 
 
 class WeightMethods:
-    def __init__(self, method: str, n_tasks: int, device: torch.device, **kwargs):
+    def __init__(
+        self, method: str, n_tasks: int, device: torch.device, isDynamic: bool, **kwargs
+    ):
         """
         :param method:
         """
-        assert method in list(METHODS.keys()), f"unknown method {method}."
-
-        self.method = METHODS[method](n_tasks=n_tasks, device=device, **kwargs)
+        self.method = METHODS[method if isDynamic else "ln"](
+            n_tasks=n_tasks, device=device, **kwargs
+        )
 
     def get_weighted_loss(self, losses, **kwargs):
         return self.method.get_weighted_loss(losses, **kwargs)
@@ -22,7 +24,7 @@ class WeightMethods:
         return self.method._get_weight(**kwargs)
 
     def update(self, **kwargs):
-        return self.method.update(**kwargs)
+        self.method.update(**kwargs)
 
     def backward(
         self, losses, **kwargs

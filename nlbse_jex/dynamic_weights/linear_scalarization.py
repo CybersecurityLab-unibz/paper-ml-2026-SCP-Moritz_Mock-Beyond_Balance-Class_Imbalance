@@ -23,5 +23,5 @@ class LinearScalarization(WeightMethod):
         self.task_weights = task_weights.to(device)
 
     def get_weighted_loss(self, losses, **kwargs):
-        loss = torch.sum(losses * self.task_weights)
+        loss = torch.mean(losses * self.task_weights)
         return loss
