@@ -223,8 +223,6 @@ class SetFitModels(DataHandler):
             device="cuda",  # TODO self.device
             n_layer=self.args.n_layer,
         )
-        self.logger.info(model_head.linear)
-        quit()
 
         if self.isDynamic:
             self.custom_loss_weight = torch.ones(self.num_classes)
