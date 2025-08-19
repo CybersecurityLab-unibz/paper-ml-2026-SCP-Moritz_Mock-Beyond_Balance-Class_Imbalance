@@ -406,6 +406,7 @@ def parse_args():
     parser.add_argument("--result-path", type=str, default=".")
     parser.add_argument("--maximise-model", type=str2bool, default=False)
     parser.add_argument("--freeze-embeddings", type=str2bool, default=False)
+    parser.add_argument("--n-layer", type=int, default=2)
     parser.add_argument("--famo-config", type=str2json, default=DEFAULT_FAMO_CONFIG)
     parser.add_argument("--coba-config", type=str2json, default=DEFAULT_COBA_CONFIG)
 

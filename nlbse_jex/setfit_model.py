@@ -178,15 +178,26 @@ class CustomSetFitModel(setfit.SetFitModel):
 
 
 class CustomSetFitHead(setfit.SetFitHead):
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, n_layer=2, **kwargs) -> None:
         super().__init__(**kwargs)
 
         if self.in_features is not None:
-            self.linear = nn.Sequential(
-                nn.Linear(self.in_features, self.in_features, bias=self.bias),
-                nn.ReLU(),
-                nn.Linear(self.in_features, self.out_features, bias=self.bias),
+            assert (
+                n_layer >= 1
+            ), "Number of layers for setfit cannot be below 1; increase 'n_layer' to 1 or more. Exiting..."
+
+            layers = []
+            for _ in range(n_layer):
+                layers.append(
+                    nn.Linear(self.in_features, self.in_features, bias=self.bias)
+                )
+                layers.append(nn.ReLU())
+
+            layers.append(
+                nn.Linear(self.in_features, self.out_features, bias=self.bias)
             )
+
+            self.linear = nn.Sequential(*layers)
 
 
 class SetFitModels(DataHandler):
@@ -209,7 +220,10 @@ class SetFitModels(DataHandler):
             out_features=self.num_classes,
             multitarget=True,
             device="cuda",  # TODO self.device
+            n_layer=self.args.n_layer,
         )
+        self.logger.info(model_head.linear)
+        quit()
 
         if self.isDynamic:
             self.custom_loss_weight = torch.ones(self.num_classes)
