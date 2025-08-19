@@ -463,7 +463,6 @@ def compute_metrics_setfit(preds, labels):
         labels = np.array(labels)
 
     num_classes = labels.shape[1]
-    preds = np.eye(num_classes)[preds]
 
     return compute_metrics(preds, labels, num_classes)
 
@@ -817,7 +816,7 @@ def parse_args():
         "--weighted-loss-strategy",
         nargs="*",
         type=str,
-        default=["EW", "test_function.py"],
+        default=["EW"],
     )
     parser.add_argument(
         "--batch-size", nargs="*", type=positive_value_int, default=[32]

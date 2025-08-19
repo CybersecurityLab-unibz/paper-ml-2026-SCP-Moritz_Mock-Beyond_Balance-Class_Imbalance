@@ -1,6 +1,6 @@
 import torch
 from torch.nn import functional as F
-
+from typing import List, Union
 from nlbse_jex.dynamic_weights.weight_method import WeightMethod
 
 
@@ -20,6 +20,7 @@ class FAMO(WeightMethod):
         gamma: float = 0.01,  # the regularization coefficient
         w_lr: float = 0.025,  # the learning rate of the task logits
         max_norm: float = 1.0,  # the maximum gradient norm
+        task_weights: Union[List[float], torch.Tensor] = None,
     ):
         super().__init__(n_tasks, device)
         self.min_losses = torch.zeros(n_tasks, device=self.device)

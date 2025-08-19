@@ -58,7 +58,7 @@ class SetFitModels(DataHandler):
         model_head = setfit.SetFitHead(
             in_features=model_body.get_sentence_embedding_dimension(),
             out_features=self.num_classes,
-            multitarget=False,
+            multitarget=True,
         )
 
         if self.isDynamic:
