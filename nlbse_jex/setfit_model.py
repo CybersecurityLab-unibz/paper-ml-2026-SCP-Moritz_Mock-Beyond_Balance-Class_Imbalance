@@ -119,6 +119,7 @@ class CustomSetFitModel(setfit.SetFitModel):
             show_progress_bar (`bool`, defaults to `True`): Whether to display a progress bar for the training
                 epochs and iterations.
         """
+        self.model_head.to("cuda")
         self.model_body.train()
         self.model_head.train()
         if not end_to_end:
