@@ -28,3 +28,37 @@ python -m unittest discover -s tests
 pip install coverage
 
 coverage run -m unittest discover -s tests && coverage report
+
+
+setup hook 
+pip install black
+
+cd .git/hook
+touch pre-commit
+
+paste code below
+
+```commandline
+#!/bin/bash
+
+echo "Running black to auto-format staged Python files..."
+
+# Get list of staged Python files
+FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$')
+
+if [ -z "$FILES" ]; then
+  echo "No Python files to format."
+  exit 0
+fi
+
+# Format each staged Python file and re-add it to staging
+for file in $FILES; do
+  black "$file"
+  git add "$file"
+done
+
+echo "Formatting complete. Proceeding with commit."
+exit 0
+```
+
+chmod -x pre-commit

@@ -93,5 +93,7 @@ nlbse_jex = "nlbse_jex.__main__:main"
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ["nlbse_jex"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["nlbse_jex*"]
+
