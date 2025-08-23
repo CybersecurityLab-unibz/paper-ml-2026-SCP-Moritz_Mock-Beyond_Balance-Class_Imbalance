@@ -1,16 +1,40 @@
+##############################################################
+# coda adapted from https://github.com/codefuse-ai/MFTCoder/ #
+# original paper https://arxiv.org/pdf/2410.06741            #
+##############################################################
+
+
 import torch
 from torch.nn import functional as F
 from typing import List, Union
 from nlbse_jex.dynamic_weights.weight_method import WeightMethod
 
 
-##############################################################
-# coda adapted from https://github.com/codefuse-ai/MFTCoder/ #
-# original paper https://arxiv.org/pdf/2410.06741            #
-##############################################################
 class COBA(WeightMethod):
-    """
-    Convergence Balancer
+    """Convergence Balancer (COBA) for multi-task learning.
+
+    This class implements the COBA algorithm for dynamic weight adjustment in multi-task learning.
+    COBA balances task convergence by computing relative and absolute convergence scores and
+    adjusting task weights accordingly.
+
+    ############################################################
+    #     original paper https://arxiv.org/pdf/2410.06741      #
+    ############################################################
+
+    Attributes:
+        coba_warmup_steps (int): Number of warmup steps before weight adjustment begins.
+        coba_history_length (int): Length of history to consider for slope fitting.
+        coba_tau (float): Temperature parameter for divergence factor calculation.
+        coba_update_interval (int): Interval for updating weights.
+        coba_sample_valid_num (int): Number of valid samples to consider.
+        history_task_valid_loss (torch.Tensor): History of validation losses for each task.
+        w (torch.Tensor): Current task weights.
+        n_tasks (int): Number of tasks.
+        device (torch.device): Device where tensors are stored.
+        completed_steps (int): Number of completed training steps.
+        minimum_weight (float): Minimum weight for any task.
+        per_task_slope_list (torch.Tensor): History of per-task slopes.
+        total_slope_list (torch.Tensor): History of total slopes.
     """
 
     def __init__(
@@ -24,6 +48,20 @@ class COBA(WeightMethod):
         coba_sample_valid_num=1,
         task_weights: Union[List[float], torch.Tensor] = None,
     ):
+        """
+        Initializes the COBA weight method.
+
+        Parameters:
+            n_tasks (int): Number of tasks.
+            device (torch.device): Device where tensors will be stored.
+            coba_warmup_steps (int): Number of warmup steps before weight adjustment begins (default: 100).
+            coba_history_length (int): Length of history to consider for slope fitting (default: 200).
+            coba_tau (float): Temperature parameter for divergence factor calculation (default: 5).
+            coba_update_interval (int): Interval for updating weights (default: 1).
+            coba_sample_valid_num (int): Number of valid samples to consider (default: 1).
+            task_weights (Union[List[float], torch.Tensor, None]): Initial task weights.
+                If None, weights are initialized to ones (default: None).
+        """
         self.coba_warmup_steps = coba_warmup_steps
         self.coba_history_length = coba_history_length
         self.coba_tau = coba_tau
@@ -37,6 +75,15 @@ class COBA(WeightMethod):
         self.minimum_weight = 1 / (n_tasks * 10)
 
     def compute_per_task_weight(self):
+        """
+        Computes the per-task weights based on convergence scores.
+
+        This method calculates relative convergence scores (RCS), absolute convergence scores (ACS),
+        and divergence factors to determine the appropriate weights for each task.
+
+        Returns:
+            torch.Tensor: Computed weights for each task.
+        """
         task_num = self.n_tasks
         task_slope_fitting = torch.ones(
             task_num, dtype=torch.float64, device=self.device
@@ -111,6 +158,17 @@ class COBA(WeightMethod):
         return per_task_weight
 
     def fit_window_slope(self, x, y, type="slope"):
+        """
+        Fits a slope to the given data points.
+
+        Parameters:
+            x (torch.Tensor): X-coordinates (steps).
+            y (torch.Tensor): Y-coordinates (losses).
+            type (str): Type of fitting ("slope" for linear, others for quadratic) (default: "slope").
+
+        Returns:
+            float: The fitted slope.
+        """
 
         y = y[y != 0]
         x = x[: len(y)]
@@ -146,9 +204,24 @@ class COBA(WeightMethod):
         return result
 
     def _get_weight(self):
+        """
+        Gets the current task weights.
+
+        Returns:
+            torch.Tensor: Current task weights.
+        """
         return self.w
 
     def get_weighted_loss(self, losses):
+        """
+        Computes the weighted loss using COBA weights.
+
+        Parameters:
+            losses (torch.Tensor): A tensor of shape (n_tasks,) containing the current task losses.
+
+        Returns:
+            torch.Tensor: The weighted sum of losses.
+        """
         if self.completed_steps >= self.coba_warmup_steps:
             self.w = self.compute_per_task_weight()
 
@@ -159,6 +232,12 @@ class COBA(WeightMethod):
         return weighted_losses.sum()
 
     def update(self, curr_loss):
+        """
+        Updates the COBA state with the current losses.
+
+        Parameters:
+            curr_loss (torch.Tensor): A tensor of shape (n_tasks,) containing the current task losses.
+        """
         self.completed_steps += 1
         self.history_task_valid_loss = torch.cat(
             [
