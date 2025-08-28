@@ -10,6 +10,7 @@ import torch
 
 from nlbse_jex.linear_weights import LinearWeights
 from nlbse_jex.utils import copy_all_files
+from nlbse_jex.utils import get_device
 from nlbse_jex.utils import recursively_delete_all_files
 from nlbse_jex.utils import find_function_callable
 from nlbse_jex.utils import isDynamic
@@ -19,6 +20,26 @@ dataset_id = "NLBSE/nlbse25-code-comment-classification"
 
 class DataHandler:
     def __init__(self, args):
+        """
+        Initializes the data handler for training, evaluation, and model management.
+
+        This constructor:
+            - Sets up logging and stores the provided arguments
+            - Initializes various attributes for datasets, paths, and class weights
+            - Detects the computation device (CPU/GPU)
+            - Determines if the loss weighting strategy is dynamic
+            - Loads training, validation, and test data
+            - Creates necessary directory paths for output and logs
+            - Sets a fixed random seed for reproducibility
+
+        Parameters:
+            args (Namespace): An object containing configuration parameters such as file paths,
+                              model settings, training hyperparameters, and loss strategy.
+
+        Returns:
+            None
+        """
+
         self.logger = logging.getLogger("nlbse_jex.data_handler")
         self.args = args
         self.num_classes = None
@@ -32,12 +53,28 @@ class DataHandler:
         self.best_model = None
         self.csv_path = None
         self.dataset_name = None
+        self.device = get_device()
         self.isDynamic = isDynamic(self.args.weighted_loss_strategy)
         self.read_data()
         self.create_paths()
         self.set_seed(42)
 
     def set_seed(self, seed):
+        """
+        Sets the random seed for reproducibility across NumPy, Python's random module, and PyTorch (CPU, MPS, and CUDA).
+
+        This method:
+            - Sets the seed for NumPy and Python's built-in `random` module
+            - Sets the seed for PyTorch on both CPU and GPU (if available)
+            - Configures PyTorch's cuDNN backend to ensure deterministic behavior
+
+        Parameters:
+            seed (int): The seed value to use for all random number generators.
+
+        Returns:
+            None
+        """
+
         np.random.seed(seed)
         random.seed(seed)
 
@@ -51,6 +88,21 @@ class DataHandler:
         torch.backends.cudnn.deterministic = True
 
     def create_paths(self):
+        """
+        Creates and initializes necessary file and directory paths for saving results, logs, and checkpoints.
+
+        This method:
+            - Constructs a base directory structure using `self.args.result_path`, sanitized model path, and dataset name
+            - Sets the path to the results CSV file (`self.csv_path`)
+            - Depending on whether model maximization is enabled (`self.args.maximise_model`):
+                - Sets paths for checkpoints and logs accordingly
+                - Creates directories for checkpoints, logs, and optionally best model storage
+            - Sanitizes file and directory names by replacing problematic characters (e.g., `/`, `-`)
+
+        Returns:
+            None
+        """
+
         base_path = self.args.result_path
         model_path = re.sub(r"[/-]", "_", self.args.model_path)
         self.dataset_name = re.sub("-", "_", "_".join(self.args.train.split("/")[:-1]))
@@ -105,6 +157,22 @@ class DataHandler:
             os.makedirs(self.logs_path, exist_ok=True)
 
     def summarize_metrics(self, metrics):
+        """
+        Logs a summary of evaluation metrics (F1, Precision, Recall) for each class.
+
+        This method:
+            - Iterates through all classes based on `self.num_classes`
+            - Retrieves F1, precision, and recall scores for each class from the `metrics` dictionary
+            - Logs the metrics in a formatted message per class
+
+        Parameters:
+            metrics (dict): A dictionary containing keys like "class_<i>_f1",
+                            "class_<i>_precision", and "class_<i>_recall" for each class index `i`.
+
+        Returns:
+            None
+        """
+
         for i in range(self.num_classes):
             f1 = metrics.get(f"class_{i}_f1")
             precision = metrics.get(f"class_{i}_precision")
@@ -114,6 +182,24 @@ class DataHandler:
             )
 
     def update_csv(self, metric):
+        """
+        Updates the results CSV file with the current run's configuration and performance metrics.
+
+        This method:
+            - Creates the CSV with appropriate columns if it does not exist
+            - Computes average precision, recall, and F1-score from metric values
+            - Appends a new row containing the model configuration and metrics
+            - Saves the updated DataFrame to the CSV file
+            - Deletes the output directory to clean up
+
+        Parameters:
+            metric (dict): A dictionary containing class-level evaluation metrics,
+                           including keys ending with "_precision", "_recall", and "_f1".
+
+        Returns:
+            None
+        """
+
         if not os.path.exists(self.csv_path):
             columns = [
                 "Model",
@@ -170,9 +256,31 @@ class DataHandler:
         self.delete_path()
 
     def delete_path(self):
+        """
+        Deletes all files and directories recursively in the parent directory of the output path.
+
+        This method:
+            - Computes the parent directory of `self.output_path`
+            - Deletes all files and subdirectories within that parent directory
+
+        Returns:
+            None
+        """
+
         recursively_delete_all_files("/".join(self.output_path.split("/")[:-1]))
 
     def update_best_model(self):
+        """
+        Updates the best model directory by copying the latest checkpoint from the output path.
+
+        This method:
+            - Identifies the latest checkpoint directory in `self.output_path`
+            - Copies all files from `self.output_path` to `self.best_model`
+
+        Returns:
+            None
+        """
+
         last_checkpoint_number = -1
         pattern = re.compile(r"^checkpoint-(\d+)$")
 
@@ -191,6 +299,26 @@ class DataHandler:
         copy_all_files(self.output_path, self.best_model)
 
     def run_already_exists(self):
+        """
+        Checks whether a training run with the current configuration already exists in the results CSV.
+
+        This method:
+            - Returns False if the CSV file at `self.csv_path` does not exist
+            - Loads the CSV and filters rows matching the current configuration, including:
+                - Model path
+                - Dataset name
+                - Weighted loss strategy (as string name if it's a function)
+                - Batch size
+                - Epoch count
+                - Learning rate
+                - Weight decay
+                - Freeze embeddings flag
+            - Returns True if a matching run exists, otherwise False
+
+        Returns:
+            bool: True if a matching run is found in the CSV, False otherwise
+        """
+
         if not os.path.exists(self.csv_path):
             return False
 
@@ -226,6 +354,19 @@ class DataHandler:
         return len(df) != 0
 
     def read_data(self):
+        """
+        Reads and processes training, validation, and test datasets from CSV files.
+
+        This method:
+            - Loads datasets from file paths specified in `self.args.train`, `self.args.val`, and `self.args.test`
+            - Converts the pandas DataFrames to Hugging Face `Dataset` objects
+            - Renames columns based on `self.args.column_key_text` and `self.args.column_key_label` to standard "text" and "label"
+            - Parses string-encoded list labels into NumPy integer arrays for model compatibility
+
+        Returns:
+            None
+        """
+
         train = pd.read_csv(self.args.train)
         val = pd.read_csv(self.args.val) if self.args.val is not None else None
         test = pd.read_csv(self.args.test)
@@ -269,6 +410,18 @@ class DataHandler:
         )
 
     def merge_dataset(self):
+        """
+        Merges available dataset splits (train, validation, test) into a single training dataset.
+
+        This method:
+            - Collects non-None dataset splits
+            - Concatenates them into a single dataset and assigns it to `data_train`
+            - Sets `data_val` and `data_test` to None
+
+        Returns:
+            None
+        """
+
         splits = [self.data_train, self.data_val, self.data_test]
         splits = [split for split in splits if split is not None]
 
@@ -279,6 +432,24 @@ class DataHandler:
         self.logger.info(self.data_train)
 
     def find_best_args(self):
+        """
+        Finds and applies the best training hyperparameters based on a CSV file of previous runs.
+
+        This method:
+            - Reads performance metrics from a CSV file at `self.csv_path`
+            - Selects the run with the highest "Average F1" score
+            - Updates the `args` object with the best values for:
+                - Weighted loss strategy (supports predefined or callable strategies)
+                - Batch size
+                - Number of epochs
+                - Learning rate
+                - Weight decay
+                - Whether to freeze embeddings during training
+
+        Returns:
+            None
+        """
+
         df = pd.read_csv(self.csv_path, sep=";")
         self.logger.info(df)
         best_run = df.loc[df["Average F1"].idxmax()]
@@ -296,11 +467,17 @@ class DataHandler:
         self.args.freeze_embeddings = bool(best_run["Freeze Embeddings"])
 
     def calculate_weights(self):
+        """
+        Calculates and sets class weight dictionaries for training labels in the case of linear weights.
+
+        Returns:
+            None
+        """
+
         self.num_classes = len(self.data_train["label"][0])
 
         if not self.isDynamic:
             self.class_weight_dicts = []
-            self.logger.info(self.args)
             linear_weights = LinearWeights(
                 self.args.weighted_loss_strategy, self.data_train["label"]
             )

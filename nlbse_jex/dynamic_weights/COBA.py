@@ -1,157 +1,40 @@
-import torch
-import torch.nn.functional as F
-from typing import Union
-from typing import Dict, List, Tuple, Union
-from abc import abstractmethod
-
-
-class WeightMethod:
-    def __init__(self, n_tasks: int, device: torch.device):
-        super().__init__()
-        self.n_tasks = n_tasks
-        self.device = device
-
-    @abstractmethod
-    def get_weighted_loss(
-        self,
-        losses: torch.Tensor,
-        **kwargs,
-    ):
-        pass
-
-    @abstractmethod
-    def _get_weight(self, **kwargs):
-        pass
-
-    def update(self, **kwargs):
-        pass
-
-    def backward(
-        self,
-        losses: torch.Tensor,
-        **kwargs,
-    ) -> Tuple[Union[torch.Tensor, None], Union[dict, None]]:
-        """
-
-        Parameters
-        ----------
-        losses :
-        shared_parameters :
-        task_specific_parameters :
-        last_shared_parameters : parameters of last shared layer/block
-        representation : shared representation
-        kwargs :
-
-        Returns
-        -------
-        Loss, extra outputs
-        """
-        loss = self.get_weighted_loss(
-            losses=losses,
-            **kwargs,
-        )
-
-        loss.backward()
-        return loss
-
-    def __call__(
-        self,
-        losses: torch.Tensor,
-        **kwargs,
-    ):
-        return self.backward(
-            losses=losses,
-            **kwargs,
-        )
-
-    def parameters(self) -> List[torch.Tensor]:
-        """return learnable parameters"""
-        return []
-
-
-class LinearScalarization(WeightMethod):
-    """Linear scalarization baseline L = sum_j w_j * l_j where l_j is the loss for task j and w_h"""
-
-    def __init__(
-        self,
-        n_tasks: int,
-        device: torch.device,
-        task_weights: Union[List[float], torch.Tensor] = None,
-    ):
-        super().__init__(n_tasks, device=device)
-        if task_weights is None:
-            task_weights = torch.ones((n_tasks,))
-        if not isinstance(task_weights, torch.Tensor):
-            task_weights = torch.tensor(task_weights)
-        assert len(task_weights) == n_tasks
-        self.task_weights = task_weights.to(device)
-
-    def get_weighted_loss(self, losses, **kwargs):
-        loss = torch.mean(losses * self.task_weights)
-        return loss
-
-
-##########################################################
-# original code from https://github.com/Cranial-XIX/FAMO #
-# original paper https://arxiv.org/pdf/2306.03792        #
-##########################################################
-class FAMO(WeightMethod):
-    """
-    Fast Adaptive Multitask Optimization.
-    """
-
-    def __init__(
-        self,
-        n_tasks: int,
-        device: torch.device,
-        gamma: float = 0.01,  # the regularization coefficient
-        w_lr: float = 0.025,  # the learning rate of the task logits
-        max_norm: float = 1.0,  # the maximum gradient norm
-        task_weights: Union[List[float], torch.Tensor] = None,
-    ):
-        self.min_losses = torch.zeros(n_tasks, device=device)
-        self.w = torch.tensor([0.0] * n_tasks, device=device, requires_grad=True)
-        self.w_opt = torch.optim.Adam([self.w], lr=w_lr, weight_decay=gamma)
-        self.max_norm = max_norm
-        self.n_tasks = n_tasks
-        self.device = device
-
-    def set_min_losses(self, losses):
-        self.min_losses = losses
-
-    def _get_weight(self):
-        return F.softmax(self.w, -1)
-
-    def get_weighted_loss(self, losses):
-        self.prev_loss = losses
-        z = F.softmax(self.w, -1)
-        D = losses - self.min_losses + 1e-8
-        c = (z / D).sum().detach()
-        loss = (D.log() * z / c).sum()
-        return loss
-
-    def update(self, curr_loss):
-        delta = (self.prev_loss - self.min_losses + 1e-8).log() - (
-            curr_loss - self.min_losses + 1e-8
-        ).log()
-        with torch.enable_grad():
-            d = torch.autograd.grad(
-                F.softmax(self.w, -1), self.w, grad_outputs=delta.detach()
-            )[0]
-        self.w_opt.zero_grad()
-        self.w.grad = d
-        self.w_opt.step()
-
-
 ##############################################################
 # coda adapted from https://github.com/codefuse-ai/MFTCoder/ #
 # original paper https://arxiv.org/pdf/2410.06741            #
 ##############################################################
 
 
+import torch
+from torch.nn import functional as F
+from typing import List, Union
+from nlbse_jex.dynamic_weights.weight_method import WeightMethod
+
+
 class COBA(WeightMethod):
-    """
-    Convergence Balancer
+    """Convergence Balancer (COBA) for multi-task learning.
+
+    This class implements the COBA algorithm for dynamic weight adjustment in multi-task learning.
+    COBA balances task convergence by computing relative and absolute convergence scores and
+    adjusting task weights accordingly.
+
+    ############################################################
+    #     original paper https://arxiv.org/pdf/2410.06741      #
+    ############################################################
+
+    Attributes:
+        coba_warmup_steps (int): Number of warmup steps before weight adjustment begins.
+        coba_history_length (int): Length of history to consider for slope fitting.
+        coba_tau (float): Temperature parameter for divergence factor calculation.
+        coba_update_interval (int): Interval for updating weights.
+        coba_sample_valid_num (int): Number of valid samples to consider.
+        history_task_valid_loss (torch.Tensor): History of validation losses for each task.
+        w (torch.Tensor): Current task weights.
+        n_tasks (int): Number of tasks.
+        device (torch.device): Device where tensors are stored.
+        completed_steps (int): Number of completed training steps.
+        minimum_weight (float): Minimum weight for any task.
+        per_task_slope_list (torch.Tensor): History of per-task slopes.
+        total_slope_list (torch.Tensor): History of total slopes.
     """
 
     def __init__(
@@ -165,6 +48,20 @@ class COBA(WeightMethod):
         coba_sample_valid_num=1,
         task_weights: Union[List[float], torch.Tensor] = None,
     ):
+        """
+        Initializes the COBA weight method.
+
+        Parameters:
+            n_tasks (int): Number of tasks.
+            device (torch.device): Device where tensors will be stored.
+            coba_warmup_steps (int): Number of warmup steps before weight adjustment begins (default: 100).
+            coba_history_length (int): Length of history to consider for slope fitting (default: 200).
+            coba_tau (float): Temperature parameter for divergence factor calculation (default: 5).
+            coba_update_interval (int): Interval for updating weights (default: 1).
+            coba_sample_valid_num (int): Number of valid samples to consider (default: 1).
+            task_weights (Union[List[float], torch.Tensor, None]): Initial task weights.
+                If None, weights are initialized to ones (default: None).
+        """
         self.coba_warmup_steps = coba_warmup_steps
         self.coba_history_length = coba_history_length
         self.coba_tau = coba_tau
@@ -178,6 +75,15 @@ class COBA(WeightMethod):
         self.minimum_weight = 1 / (n_tasks * 10)
 
     def compute_per_task_weight(self):
+        """
+        Computes the per-task weights based on convergence scores.
+
+        This method calculates relative convergence scores (RCS), absolute convergence scores (ACS),
+        and divergence factors to determine the appropriate weights for each task.
+
+        Returns:
+            torch.Tensor: Computed weights for each task.
+        """
         task_num = self.n_tasks
         task_slope_fitting = torch.ones(
             task_num, dtype=torch.float64, device=self.device
@@ -252,6 +158,17 @@ class COBA(WeightMethod):
         return per_task_weight
 
     def fit_window_slope(self, x, y, type="slope"):
+        """
+        Fits a slope to the given data points.
+
+        Parameters:
+            x (torch.Tensor): X-coordinates (steps).
+            y (torch.Tensor): Y-coordinates (losses).
+            type (str): Type of fitting ("slope" for linear, others for quadratic) (default: "slope").
+
+        Returns:
+            float: The fitted slope.
+        """
 
         y = y[y != 0]
         x = x[: len(y)]
@@ -287,9 +204,24 @@ class COBA(WeightMethod):
         return result
 
     def _get_weight(self):
+        """
+        Gets the current task weights.
+
+        Returns:
+            torch.Tensor: Current task weights.
+        """
         return self.w
 
     def get_weighted_loss(self, losses):
+        """
+        Computes the weighted loss using COBA weights.
+
+        Parameters:
+            losses (torch.Tensor): A tensor of shape (n_tasks,) containing the current task losses.
+
+        Returns:
+            torch.Tensor: The weighted sum of losses.
+        """
         if self.completed_steps >= self.coba_warmup_steps:
             self.w = self.compute_per_task_weight()
 
@@ -300,6 +232,12 @@ class COBA(WeightMethod):
         return weighted_losses.sum()
 
     def update(self, curr_loss):
+        """
+        Updates the COBA state with the current losses.
+
+        Parameters:
+            curr_loss (torch.Tensor): A tensor of shape (n_tasks,) containing the current task losses.
+        """
         self.completed_steps += 1
         self.history_task_valid_loss = torch.cat(
             [
@@ -308,38 +246,3 @@ class COBA(WeightMethod):
             ],
             dim=1,
         )  # shape history ,task
-
-
-class WeightMethods:
-    def __init__(
-        self, method: str, n_tasks: int, device: torch.device, isDynamic: bool, **kwargs
-    ):
-        """
-        :param method:
-        """
-        self.method = METHODS[method if isDynamic else "ln"](
-            n_tasks=n_tasks, device=device, **kwargs
-        )
-
-    def get_weighted_loss(self, losses, **kwargs):
-        return self.method.get_weighted_loss(losses, **kwargs)
-
-    def _get_weight(self, **kwargs):
-        return self.method._get_weight(**kwargs)
-
-    def update(self, **kwargs):
-        self.method.update(**kwargs)
-
-    def backward(
-        self, losses, **kwargs
-    ) -> Tuple[Union[torch.Tensor, None], Union[Dict, None]]:
-        return self.method.backward(losses, **kwargs)
-
-    def __call__(self, losses, **kwargs):
-        return self.backward(losses, **kwargs)
-
-    def parameters(self):
-        return self.method.parameters()
-
-
-METHODS = dict(FAMO=FAMO, COBA=COBA, ln=LinearScalarization)
