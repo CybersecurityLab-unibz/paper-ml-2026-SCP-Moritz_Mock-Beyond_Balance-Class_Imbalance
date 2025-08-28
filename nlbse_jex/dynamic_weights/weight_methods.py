@@ -15,6 +15,7 @@ class WeightMethods:
     Attributes:
         method (WeightMethod): An instance of the selected weight method.
     """
+
     def __init__(
         self, method: str, n_tasks: int, device: torch.device, isDynamic: bool, **kwargs
     ):

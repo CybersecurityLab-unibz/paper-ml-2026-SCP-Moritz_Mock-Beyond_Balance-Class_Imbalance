@@ -15,6 +15,7 @@ class WeightMethod:
         n_tasks (int): The number of tasks.
         device (torch.device): The device (CPU/GPU) where the weights and losses are stored.
     """
+
     def __init__(self, n_tasks: int, device: torch.device):
         super().__init__()
         """

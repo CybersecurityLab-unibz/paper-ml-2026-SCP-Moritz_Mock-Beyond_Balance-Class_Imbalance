@@ -1,12 +1,11 @@
 from typing import Union, List
-
 import torch
-
 from nlbse_jex.dynamic_weights.weight_method import WeightMethod
 
 
 class LinearScalarization(WeightMethod):
-   """A linear scalarization method for multi-task learning.
+    """
+    A linear scalarization method for multi-task learning.
 
     This class implements a linear scalarization approach to combine multiple task losses into a single loss.
     The combined loss is computed as a weighted sum of individual task losses:
@@ -25,7 +24,6 @@ class LinearScalarization(WeightMethod):
         device (torch.device): The device (CPU/GPU) where the weights and losses are stored.
     """
 
-
     def __init__(
         self,
         n_tasks: int,
@@ -35,26 +33,26 @@ class LinearScalarization(WeightMethod):
         super().__init__(n_tasks, device=device)
         """
         Initializes the LinearScalarization object.
-
+    
         This constructor:
             - Calls the parent class constructor to set up the number of tasks and device.
             - Initializes task weights to ones if not provided.
             - Converts task weights to a PyTorch tensor if they are provided as a list.
             - Validates that the length of task weights matches the number of tasks.
             - Moves the task weights tensor to the specified device.
-
+    
         Parameters:
             n_tasks (int): The number of tasks.
             device (torch.device): The device (MPU/CPU/GPU) where the weights and losses will be stored.
             task_weights (Union[List[float], torch.Tensor, None], optional): The weights for each task.
                 If None, all tasks are weighted equally (default: None).
-
+    
         Raises:
             AssertionError: If the length of `task_weights` does not match `n_tasks`.
         Returns:
             None
         """
-        
+
         if task_weights is None:
             task_weights = torch.ones((n_tasks,))
         if not isinstance(task_weights, torch.Tensor):
