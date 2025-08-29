@@ -33,12 +33,22 @@ class SetFitHead(setfit.SetFitHead):
             layers = []
             for _ in range(n_layer):
                 layers.append(
-                    nn.Linear(self.in_features, self.in_features, bias=self.bias)
+                    nn.Linear(
+                        self.in_features,
+                        self.in_features,
+                        bias=self.bias,
+                        device=self._device,
+                    )
                 )
                 layers.append(nn.ReLU())
 
             layers.append(
-                nn.Linear(self.in_features, self.out_features, bias=self.bias)
+                nn.Linear(
+                    self.in_features,
+                    self.out_features,
+                    bias=self.bias,
+                    device=self._device,
+                )
             )
 
             self.linear = nn.Sequential(*layers)
