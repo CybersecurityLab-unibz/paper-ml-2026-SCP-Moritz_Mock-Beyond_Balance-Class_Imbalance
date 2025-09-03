@@ -35,12 +35,63 @@ def read_files_weighted_loss_strategy(args):
 
     for index, wl in enumerate(args.weighted_loss_strategy):
         if wl.endswith(".py"):
-            function = import_function_from_path(wl)
-            ok, mismatches = can_pass_args_with_types(function, args_ok)
-            assert ok is True, "\n".join(mismatches)
-            args.weighted_loss_strategy[index] = function
+            args.weighted_loss_strategy[index] = dynamic_import_code(wl, args_ok)
 
     return args
+
+
+def read_file_compute_metric(args):
+    """
+    Reads and imports any custom weighted loss strategy functions provided as file paths.
+
+    This function:
+        - Iterates over the `weighted_loss_strategy` entries in `args`
+        - For entries ending with `.py`, imports the first function from the file
+        - Validates that the function can accept a `labels` argument using `can_pass_args_with_types`
+        - Replaces the file path with the actual function object in `args.weighted_loss_strategy`
+        - Asserts that all imported functions are valid; raises an error with details if mismatches are found
+
+    Parameters:
+        args (argparse.Namespace): The parsed command-line or configuration arguments.
+
+    Returns:
+        argparse.Namespace: The updated `args` object with function references substituted for file paths.
+    """
+    # preds, labels, num_classes
+
+    args_ok = {
+        "preds": "placeholder",
+        "labels": "placeholder",
+        "num_classes": "placeholder",
+    }
+
+    if args.costume_metrics is not None and args.costume_metrics.endswith(".py"):
+        args.costume_metrics = dynamic_import_code(args.costume_metrics, args_ok)
+
+    return args
+
+
+def dynamic_import_code(wl, args_ok):
+    """
+    Dynamically imports and validates a function from a Python file path.
+
+    This function:
+        - Uses `import_function_from_path` to load the first function defined in the file specified by `wl`
+        - Validates the imported function's signature using `can_pass_args_with_types`
+        - Ensures that the function can accept the required arguments as defined in `args_ok`
+        - Raises an AssertionError with mismatch details if the function signature is incompatible
+
+    Parameters:
+        wl (str): Path to the Python file containing the function to import.
+        args_ok (dict): A mapping of argument names and placeholder values used to validate the function's signature.
+
+    Returns:
+        function: The imported and validated function object.
+    """
+    function = import_function_from_path(wl)
+    ok, mismatches = can_pass_args_with_types(function, args_ok)
+    assert ok is True, "\n".join(mismatches)
+    return function
 
 
 def can_pass_args_with_types(func, args_dict):
@@ -435,7 +486,7 @@ def read_config(args, parser):
     return argparse.Namespace(**merge_config_with_args(yaml_config, args, parser))
 
 
-def compute_metrics_setfit(preds, labels):
+def compute_metrics_setfit(preds, labels, costume_metric=None):
     """
     Computes evaluation metrics for SetFit models in a multi-label classification setting.
 
@@ -447,6 +498,7 @@ def compute_metrics_setfit(preds, labels):
     Parameters:
         preds (Union[Tensor, list, np.ndarray]): Predicted class indices.
         labels (Union[Tensor, list, np.ndarray]): Ground truth binary label vectors.
+        costume_metric: Costume metric, which can be passed by the user
 
     Returns:
         dict: A dictionary of computed evaluation metrics per class.
@@ -464,7 +516,8 @@ def compute_metrics_setfit(preds, labels):
 
     num_classes = labels.shape[1]
 
-    return compute_metrics(preds, labels, num_classes)
+    metric_fn = costume_metric or compute_metrics
+    return metric_fn(preds, labels, num_classes)
 
 
 def compute_metrics_roberta(eval_pred):
@@ -839,6 +892,7 @@ def parse_args():
         default="sentence-transformers/paraphrase-MiniLM-L6-v2",
         type=str,
     )
+    parser.add_argument("--costume-metrics", type=str, default=None)
     parser.add_argument("--result-path", type=str, default=".")
     parser.add_argument("--maximise-model", type=str2bool, default=False)
     parser.add_argument("--freeze-embeddings", type=str2bool, default=False)

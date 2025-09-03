@@ -8,6 +8,7 @@ from nlbse_jex.setfit_models.setfit_trainer import SetFitTrainer
 from nlbse_jex.utils import compute_metrics_setfit
 import torch
 import yaml
+from functools import partial
 
 
 class SetFitModels(DataHandler):
@@ -121,7 +122,9 @@ class SetFitModels(DataHandler):
             args=args,
             train_dataset=self.data_train,  # .select(range(50)), #TODO remove range
             eval_dataset=self.data_test,
-            metric=compute_metrics_setfit,
+            metric=partial(
+                compute_metrics_setfit, costume_metric=self.args.costume_metrics
+            ),
             freeze_embeddings=self.args.freeze_embeddings,
         )
 

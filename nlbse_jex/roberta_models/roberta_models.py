@@ -12,7 +12,7 @@ from nlbse_jex.roberta_models.WeightedBCELoss import WeightedBCELoss
 from nlbse_jex.roberta_models.roberta_trainer import RoBERTaTrainer
 from nlbse_jex.utils import compute_metrics_roberta
 from nlbse_jex.dynamic_weights.weight_methods import WeightMethods
-from nlbse_jex.utils import get_device
+from functools import partial
 
 
 class RoBERTaModels(DataHandler):
@@ -185,7 +185,9 @@ class RoBERTaModels(DataHandler):
             eval_dataset=self.data_test,
             custom_loss=self.custom_loss,
             data_collator=data_collator,
-            compute_metrics=compute_metrics_roberta,
+            compute_metrics=partial(
+                compute_metrics_roberta, costume_metric=self.args.costume_metrics
+            ),
             dynamic_weight_loss=self.dynamic_weight_loss,
             num_classes=self.num_classes,
             isDynamic=self.isDynamic,

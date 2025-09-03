@@ -6,6 +6,7 @@ config.yml
 **/*.egg-info/
 
 test_function.py
+test_compute_metric.py
 __pycache__/
 run_all_t.batch
 checkpoints

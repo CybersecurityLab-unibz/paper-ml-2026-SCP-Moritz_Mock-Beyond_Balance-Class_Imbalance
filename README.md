@@ -8,10 +8,10 @@ pip install . && nlbse_jex --weighted-loss FAMO \
 --column-key-label labels \
 --freeze-embeddings True \
 --model-path sentence-transformers/paraphrase-MiniLM-L6-v2 \
---batch-size 8 16 32 \
---lr 0.01 0.001 \
---weight-decay 0 0.01 0.001 \
---epoch 5 10
+--batch-size 8  \
+--lr 0.01 \
+--weight-decay 0  \
+--epoch 1
 
 pip install . && nlbse_jex --weighted-loss FAMO \
 --train ../data/data/NLBSE25/pharo/pharo_train.csv \

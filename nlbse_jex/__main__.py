@@ -3,6 +3,7 @@ from itertools import product
 import logging
 from nlbse_jex.utils import parse_args
 from nlbse_jex.utils import read_files_weighted_loss_strategy
+from nlbse_jex.utils import read_file_compute_metric
 from nlbse_jex.utils import generate_base_config
 from nlbse_jex.utils import read_config
 from nlbse_jex.proxy import Proxy
@@ -33,6 +34,7 @@ def main():
     args.coba_config = validate_config(args.coba_config, DEFAULT_COBA_CONFIG)
 
     args = read_files_weighted_loss_strategy(args)
+    args = read_file_compute_metric(args)
 
     logging.info(args)
 
