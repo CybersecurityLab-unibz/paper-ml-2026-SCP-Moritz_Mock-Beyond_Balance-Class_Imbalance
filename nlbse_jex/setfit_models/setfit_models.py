@@ -104,7 +104,6 @@ class SetFitModels(DataHandler):
         Returns:
             None
         """
-
         args = setfit.TrainingArguments(
             output_dir=self.output_path,
             logging_dir=self.logs_path,
@@ -112,9 +111,10 @@ class SetFitModels(DataHandler):
             num_epochs=self.args.epoch,
             head_learning_rate=self.args.lr,
             l2_weight=self.args.weight_decay,  # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
-            save_strategy="epoch",
-            save_total_limit=1,
-            num_iterations=20,  # as default in setfit 1.0.0
+            # save_strategy="epoch",
+            # save_total_limit=1,
+            # num_iterations=20,  # as default in setfit 1.0.0
+            **self.args.setfit_parameters,
         )
 
         self.trainer = SetFitTrainer(

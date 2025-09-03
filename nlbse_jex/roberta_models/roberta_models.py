@@ -172,8 +172,9 @@ class RoBERTaModels(DataHandler):
             num_train_epochs=self.args.epoch,
             weight_decay=self.args.weight_decay,
             learning_rate=self.args.lr,
-            save_strategy="epoch",
-            save_total_limit=1,
+            # save_strategy="epoch",
+            # save_total_limit=1,
+            **self.args.roberta_parameters,
         )
 
         data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)

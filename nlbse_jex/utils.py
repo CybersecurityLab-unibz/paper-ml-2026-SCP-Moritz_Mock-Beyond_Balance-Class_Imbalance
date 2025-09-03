@@ -788,6 +788,15 @@ DEFAULT_COBA_CONFIG = {
 }
 
 
+def validate_hs_parameters(costume_arguments, TA):
+    dict_valid_parameters = TA.__init__.__annotations__
+    for key in costume_arguments:
+        if key not in dict_valid_parameters:
+            raise ValueError(
+                f"Type mismatch for '{key}': expected is not a valid parameter. Run stopped!"
+            )
+
+
 def validate_config(passed, default):
     """
     Validates a configuration dictionary by checking for type consistency and unexpected keys.
@@ -904,6 +913,8 @@ def parse_args():
     parser.add_argument("--n-layer", type=int, default=2)
     parser.add_argument("--famo-config", type=str2json, default=DEFAULT_FAMO_CONFIG)
     parser.add_argument("--coba-config", type=str2json, default=DEFAULT_COBA_CONFIG)
+    parser.add_argument("--setfit-parameters", type=str2json, default={})
+    parser.add_argument("--roberta-parameters", type=str2json, default={})
 
     return parser
 
