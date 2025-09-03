@@ -894,6 +894,10 @@ def parse_args():
         type=str,
     )
     parser.add_argument("--costume-metrics", type=str, default=None)
+    parser.add_argument("--costume-whitelist-setfit", nargs="*", type=str, default=None)
+    parser.add_argument(
+        "--costume-whitelist-roberta", nargs="*", type=str, default=None
+    )
     parser.add_argument("--result-path", type=str, default=".")
     parser.add_argument("--maximise-model", type=str2bool, default=False)
     parser.add_argument("--freeze-embeddings", type=str2bool, default=False)

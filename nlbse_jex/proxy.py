@@ -31,8 +31,12 @@ class Proxy:
         self.model_type = None
         self.model = None
         self.args = args
-        self.setfit_whitelist = ["bert", "mpnet"]
-        self.roberta_whitelist = ["roberta"]
+        self.setfit_whitelist = ["bert", "mpnet"] + (
+            self.args.costume_whitelist_setfit or []
+        )
+        self.roberta_whitelist = ["roberta"] + (
+            self.args.costume_whitelist_roberta or []
+        )
 
     def _type_of_model(self) -> str | None:
         """
