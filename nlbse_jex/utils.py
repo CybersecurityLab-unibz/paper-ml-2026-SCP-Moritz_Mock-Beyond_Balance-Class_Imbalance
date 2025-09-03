@@ -520,7 +520,7 @@ def compute_metrics_setfit(preds, labels, costume_metric=None):
     return metric_fn(preds, labels, num_classes)
 
 
-def compute_metrics_roberta(eval_pred):
+def compute_metrics_roberta(eval_pred, costume_metric=None):
     """
     Computes evaluation metrics for RoBERTa-based multilabel classification models.
 
@@ -561,7 +561,8 @@ def compute_metrics_roberta(eval_pred):
     predictions = predictions.cpu().numpy()
     labels = labels.cpu().numpy()
 
-    return compute_metrics(predictions, labels, labels.shape[1])
+    metric_fn = costume_metric or compute_metrics
+    return metric_fn(predictions, labels, labels.shape[1])
 
 
 def compute_metrics(preds, labels, num_classes):
