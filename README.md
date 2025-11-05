@@ -166,3 +166,5 @@ See `linear_weights.py` and `dynamic_weights/` for implementation details.
 }
 ```
 -->
+
+The tool will be maintained by the CyberSecurity Lab ([https://cslab.projects.unibz.it](https://cslab.projects.unibz.it)) to ensure its long-term accessibility.
