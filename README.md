@@ -4,7 +4,7 @@
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.12
 - PyTorch
 - pandas, numpy
 - datasets, transformers, setfit
