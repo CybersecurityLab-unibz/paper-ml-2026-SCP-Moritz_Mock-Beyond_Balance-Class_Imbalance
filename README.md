@@ -144,10 +144,10 @@ See source code for full details and docstrings.
 
 NLBSE supports both static and dynamic weighted loss strategies for multi-label classification:
 
-- **EW**: Equal Weights (all classes weighted equally)
-- **ICF**: Inverse Class Frequency (rare classes get higher weight)
-- **RBF**: Radial Basis Function-inspired (reverses class frequency ranking)
-- **FAMO, COBA**: Dynamic strategies (see paper for details)
+- **EW**: Equal Weights
+- **ICF**: Inverse Class Frequency
+- **RBF**: Ranking-Based Frequency
+- **FAMO, COBA**: Dynamic strategies (see code for details)
 
 You can also provide a custom weighting function as a `.py` file.
 
