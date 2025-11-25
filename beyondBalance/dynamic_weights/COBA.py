@@ -7,7 +7,7 @@
 import torch
 from torch.nn import functional as F
 from typing import List, Union
-from nlbse_jex.dynamic_weights.weight_method import WeightMethod
+from beyondBalance.dynamic_weights.weight_method import WeightMethod
 
 
 class COBA(WeightMethod):

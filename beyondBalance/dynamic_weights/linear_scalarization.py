@@ -1,6 +1,6 @@
 from typing import Union, List
 import torch
-from nlbse_jex.dynamic_weights.weight_method import WeightMethod
+from beyondBalance.dynamic_weights.weight_method import WeightMethod
 
 
 class LinearScalarization(WeightMethod):

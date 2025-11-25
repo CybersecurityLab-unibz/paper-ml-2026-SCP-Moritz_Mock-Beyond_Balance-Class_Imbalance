@@ -1,6 +1,6 @@
 import unittest
-from nlbse_jex.linear_weights import LinearWeights
-from nlbse_jex.utils import parse_args, read_files_weighted_loss_strategy
+from beyondBalance.linear_weights import LinearWeights
+from beyondBalance.utils import parse_args, read_files_weighted_loss_strategy
 from unittest.mock import patch
 import os
 import pandas as pd

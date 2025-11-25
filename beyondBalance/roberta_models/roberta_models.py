@@ -1,5 +1,5 @@
 from transformers import AutoTokenizer
-from nlbse_jex.data_handler import DataHandler
+from beyondBalance.data_handler import DataHandler
 from transformers import (
     RobertaForSequenceClassification,
     TrainingArguments,
@@ -8,10 +8,10 @@ from transformers import (
 import torch
 import os
 
-from nlbse_jex.roberta_models.WeightedBCELoss import WeightedBCELoss
-from nlbse_jex.roberta_models.roberta_trainer import RoBERTaTrainer
-from nlbse_jex.utils import compute_metrics_roberta
-from nlbse_jex.dynamic_weights.weight_methods import WeightMethods
+from beyondBalance.roberta_models.WeightedBCELoss import WeightedBCELoss
+from beyondBalance.roberta_models.roberta_trainer import RoBERTaTrainer
+from beyondBalance.utils import compute_metrics_roberta
+from beyondBalance.dynamic_weights.weight_methods import WeightMethods
 from functools import partial
 
 

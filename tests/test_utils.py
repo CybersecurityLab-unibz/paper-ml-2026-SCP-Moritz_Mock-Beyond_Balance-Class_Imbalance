@@ -3,21 +3,21 @@ import unittest
 
 import numpy as np
 
-from nlbse_jex.utils import read_config, str2bool, DEFAULT_COBA_CONFIG, str2json
-from nlbse_jex.utils import read_files_weighted_loss_strategy
-from nlbse_jex.utils import find_function_callable
-from nlbse_jex.utils import get_first_function_name
-from nlbse_jex.utils import compute_metrics
-from nlbse_jex.utils import compute_metrics_setfit
-from nlbse_jex.utils import compute_metrics_roberta
-from nlbse_jex.utils import copy_all_files
-from nlbse_jex.utils import recursively_delete_all_files
-from nlbse_jex.utils import parse_args
-from nlbse_jex.utils import generate_base_config
-from nlbse_jex.utils import load_yaml_config
-from nlbse_jex.utils import import_function_from_path
-from nlbse_jex.utils import validate_config
-from nlbse_jex.utils import isDynamic
+from beyondBalance.utils import read_config, str2bool, DEFAULT_COBA_CONFIG, str2json
+from beyondBalance.utils import read_files_weighted_loss_strategy
+from beyondBalance.utils import find_function_callable
+from beyondBalance.utils import get_first_function_name
+from beyondBalance.utils import compute_metrics
+from beyondBalance.utils import compute_metrics_setfit
+from beyondBalance.utils import compute_metrics_roberta
+from beyondBalance.utils import copy_all_files
+from beyondBalance.utils import recursively_delete_all_files
+from beyondBalance.utils import parse_args
+from beyondBalance.utils import generate_base_config
+from beyondBalance.utils import load_yaml_config
+from beyondBalance.utils import import_function_from_path
+from beyondBalance.utils import validate_config
+from beyondBalance.utils import isDynamic
 from unittest.mock import patch
 import os
 import filecmp

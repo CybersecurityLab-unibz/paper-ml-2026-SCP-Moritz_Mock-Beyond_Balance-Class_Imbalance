@@ -1,6 +1,6 @@
 # Optimizing in the Shadows: Addressing Class Imbalance in Fine-Tuning Deep Learners
 
-<tool name> is a flexible framework for multi-label text classification in software engineering, supporting dynamic and static weighted loss strategies, and easy integration of custom models and metrics.
+*Beyond Balance* is a flexible framework for multi-label text classification in software engineering, supporting dynamic and static weighted loss strategies, and easy integration of custom models and metrics.
 
 ## Requirements
 
@@ -15,8 +15,8 @@
 Clone the code repository, create a virtual environment, activate it, and install with pip:
 
 ```sh
-git clone https://github.com/moritzmock/<tool name>.git
-cd <tool name>
+git clone https://github.com/CybersecurityLab-unibz/beyondBalance.git
+cd beyondBalance
 python3 -m venv env
 source env/bin/activate
 pip install .
@@ -30,7 +30,7 @@ Install dependencies and run a dummy script:
 
 ```sh
 pip install .
-<tool name> --weighted-loss FAMO \
+beyondBalance --weighted-loss FAMO \
   --train ./data/NLBSE25/pharo/pharo_train.csv \
   --test ./data/NLBSE25/pharo/pharo_test.csv \
   --column-key-text combo \
@@ -58,7 +58,7 @@ coverage run -m unittest discover -s tests && coverage report
 
 ### Command-line Arguments
 
-The main entrypoint is `<tool name>` (or `python -m <tool name>`).
+The main entrypoint is `beyondBalance` (or `python -m beyondBalance`).
 
 Key arguments:
 
@@ -71,7 +71,7 @@ Key arguments:
 - `--maximise-model`: grid search for best config
 - `--generate-base-config`: create a config template
 
-See `<tool name>/utils.py:parse_args` for all options.
+See `beyondBalance/utils.py:parse_args` for all options.
 
 ## API Reference
 
@@ -147,7 +147,7 @@ NLBSE supports both static and dynamic weighted loss strategies for multi-label 
 - **EW**: Equal Weights (all classes weighted equally)
 - **ICF**: Inverse Class Frequency (rare classes get higher weight)
 - **RBF**: Radial Basis Function-inspired (reverses class frequency ranking)
-- **FAMO, COBA**: Dynamic strategies (see code for details)
+- **FAMO, COBA**: Dynamic strategies (see paper for details)
 
 You can also provide a custom weighting function as a `.py` file.
 
@@ -167,4 +167,4 @@ See `linear_weights.py` and `dynamic_weights/` for implementation details.
 ```
 -->
 
-The tool will be maintained by the CyberSecurity Lab ([https://cslab.projects.unibz.it](https://cslab.projects.unibz.it)) to ensure its long-term accessibility.
+*Beyond Balance* will be maintained by the CyberSecurity Lab ([https://cslab.projects.unibz.it](https://cslab.projects.unibz.it)) to ensure its long-term accessibility.

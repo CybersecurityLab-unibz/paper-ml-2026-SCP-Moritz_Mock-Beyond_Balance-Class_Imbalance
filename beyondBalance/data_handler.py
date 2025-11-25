@@ -8,12 +8,12 @@ import numpy as np
 import random
 import torch
 
-from nlbse_jex.linear_weights import LinearWeights
-from nlbse_jex.utils import copy_all_files
-from nlbse_jex.utils import get_device
-from nlbse_jex.utils import recursively_delete_all_files
-from nlbse_jex.utils import find_function_callable
-from nlbse_jex.utils import isDynamic
+from beyondBalance.linear_weights import LinearWeights
+from beyondBalance.utils import copy_all_files
+from beyondBalance.utils import get_device
+from beyondBalance.utils import recursively_delete_all_files
+from beyondBalance.utils import find_function_callable
+from beyondBalance.utils import isDynamic
 
 dataset_id = "NLBSE/nlbse25-code-comment-classification"
 

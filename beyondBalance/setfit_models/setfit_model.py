@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from tqdm.asyncio import trange, tqdm
 
-from nlbse_jex.dynamic_weights import WeightMethods
+from beyondBalance.dynamic_weights import WeightMethods
 
 
 class SetFitModel(setfit.SetFitModel):

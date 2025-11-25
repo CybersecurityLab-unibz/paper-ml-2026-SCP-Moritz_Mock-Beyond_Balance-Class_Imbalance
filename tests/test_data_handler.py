@@ -1,10 +1,10 @@
 import re
 import unittest
 import os
-from nlbse_jex.data_handler import DataHandler
-from nlbse_jex.utils import parse_args
-from nlbse_jex.utils import compute_metrics
-from nlbse_jex.utils import recursively_delete_all_files
+from beyondBalance.data_handler import DataHandler
+from beyondBalance.utils import parse_args
+from beyondBalance.utils import compute_metrics
+from beyondBalance.utils import recursively_delete_all_files
 from unittest.mock import patch
 from datasets import Dataset
 import numpy as np

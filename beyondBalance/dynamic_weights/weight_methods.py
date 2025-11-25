@@ -1,9 +1,9 @@
 import torch
 from typing import Dict, Tuple, Union
 
-from nlbse_jex.dynamic_weights.COBA import COBA
-from nlbse_jex.dynamic_weights.FAMO import FAMO
-from nlbse_jex.dynamic_weights.linear_scalarization import LinearScalarization
+from beyondBalance.dynamic_weights.COBA import COBA
+from beyondBalance.dynamic_weights.FAMO import FAMO
+from beyondBalance.dynamic_weights.linear_scalarization import LinearScalarization
 
 
 class WeightMethods:

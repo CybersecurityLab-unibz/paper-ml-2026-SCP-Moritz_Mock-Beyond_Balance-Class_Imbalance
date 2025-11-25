@@ -3,16 +3,16 @@ from itertools import product
 import logging
 from setfit import TrainingArguments as TA_setfit
 from transformers import TrainingArguments as TA_roberta
-from nlbse_jex.utils import parse_args
-from nlbse_jex.utils import read_files_weighted_loss_strategy
-from nlbse_jex.utils import read_file_compute_metric
-from nlbse_jex.utils import generate_base_config
-from nlbse_jex.utils import read_config
-from nlbse_jex.proxy import Proxy
-from nlbse_jex.utils import validate_config
-from nlbse_jex.utils import validate_hs_parameters
-from nlbse_jex.utils import DEFAULT_FAMO_CONFIG
-from nlbse_jex.utils import DEFAULT_COBA_CONFIG
+from beyondBalance.utils import parse_args
+from beyondBalance.utils import read_files_weighted_loss_strategy
+from beyondBalance.utils import read_file_compute_metric
+from beyondBalance.utils import generate_base_config
+from beyondBalance.utils import read_config
+from beyondBalance.proxy import Proxy
+from beyondBalance.utils import validate_config
+from beyondBalance.utils import validate_hs_parameters
+from beyondBalance.utils import DEFAULT_FAMO_CONFIG
+from beyondBalance.utils import DEFAULT_COBA_CONFIG
 
 logging.basicConfig(
     format="%(asctime)s - %(message)s", level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S"

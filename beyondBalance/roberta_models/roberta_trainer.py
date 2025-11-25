@@ -1,7 +1,7 @@
 import torch
 from transformers import Trainer
 
-from nlbse_jex.utils import get_device
+from beyondBalance.utils import get_device
 
 
 class RoBERTaTrainer(Trainer):

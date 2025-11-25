@@ -1,11 +1,11 @@
 import os
 import setfit
 from sentence_transformers import SentenceTransformer
-from nlbse_jex.data_handler import DataHandler
-from nlbse_jex.setfit_models.setfit_model import SetFitModel
-from nlbse_jex.setfit_models.setfit_head import SetFitHead
-from nlbse_jex.setfit_models.setfit_trainer import SetFitTrainer
-from nlbse_jex.utils import compute_metrics_setfit
+from beyondBalance.data_handler import DataHandler
+from beyondBalance.setfit_models.setfit_model import SetFitModel
+from beyondBalance.setfit_models.setfit_head import SetFitHead
+from beyondBalance.setfit_models.setfit_trainer import SetFitTrainer
+from beyondBalance.utils import compute_metrics_setfit
 import torch
 import yaml
 from functools import partial
