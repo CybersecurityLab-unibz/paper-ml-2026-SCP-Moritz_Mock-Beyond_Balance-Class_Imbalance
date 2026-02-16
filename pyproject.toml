@@ -1,5 +1,5 @@
 [project]
-name = "Beyond Balance"
+name = "beyond-balance"
 version = "0.1.0"
 description = "A simple Hello World CLI tool"
 authors = [
