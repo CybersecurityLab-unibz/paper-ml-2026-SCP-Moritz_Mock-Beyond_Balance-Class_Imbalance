@@ -47,7 +47,7 @@ dependencies = [
     "multidict==6.5.1",
     "multiprocess==0.70.16",
     "networkx==3.4.2",
-    "numpy==2.2.5",
+    "numpy==2.*",
     "olefile==0.47",
     "openpyxl==3.1.5",
     "packaging==25.0",

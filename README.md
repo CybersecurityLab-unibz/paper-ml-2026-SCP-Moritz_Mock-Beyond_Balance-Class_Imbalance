@@ -152,14 +152,18 @@ You can also provide a custom weighting function as a `.py` file.
 
 See `linear_weights.py` and `dynamic_weights/` for implementation details.
 
+### Example data
+
+The folder [data](data/) contains example data.
+
 <!--
 ## How to Cite
 
 ```
 @inbook{key,
-  title = "Optimizing in the Shadows: Addressing Class Imbalance in Fine-Tuning Deep Learners",
+  title = "Beyond Balance - Addressing Class Imbalance in Fine-Tuning Deep Learners",
   author = "Moritz Mock, Thomas Borsani, Giuseppe di Fatta, and Barbara Russo",
-  year = "2025",
+  year = "2026",
   doi = "...",
   booktitle = "...",
 }
