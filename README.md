@@ -26,10 +26,9 @@ pip install .
 
 ### Quickstart
 
-Install dependencies and run a dummy script:
+Run a dummy script:
 
 ```sh
-pip install .
 beyondBalance --weighted-loss FAMO \
   --train ./data/NLBSE25/pharo/pharo_train.csv \
   --test ./data/NLBSE25/pharo/pharo_test.csv \

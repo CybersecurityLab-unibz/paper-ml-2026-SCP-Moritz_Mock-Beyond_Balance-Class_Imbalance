@@ -1,7 +1,7 @@
 import torch
 from torch import nn as nn
 
-from nlbse_jex.utils import get_device
+from beyondBalance.utils import get_device
 
 
 class WeightedBCELoss(nn.Module):

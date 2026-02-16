@@ -25,7 +25,7 @@ class LinearWeights:
             None
         """
 
-        self.logger = logging.getLogger("nlbse_jex.linear_weights")
+        self.logger = logging.getLogger("beyondBalance.linear_weights")
         self.type = type
         self.labels = labels
         self.num_classes = len(labels[0])

@@ -117,28 +117,28 @@ class TestUtils(unittest.TestCase):
         )
 
         dh.calculate_weights()
-        with self.assertLogs("nlbse_jex.data_handler", level="INFO") as cm:
+        with self.assertLogs("beyondBalance.data_handler", level="INFO") as cm:
             dh.summarize_metrics(metrics)
 
         self.assertEqual(
             cm.output[0],
-            "INFO:nlbse_jex.data_handler:Class 0: F1=0.000, Precision=0.000, Recall=0.000",
+            "INFO:beyondBalance.data_handler:Class 0: F1=0.000, Precision=0.000, Recall=0.000",
         )
         self.assertEqual(
             cm.output[1],
-            "INFO:nlbse_jex.data_handler:Class 1: F1=0.667, Precision=1.000, Recall=0.500",
+            "INFO:beyondBalance.data_handler:Class 1: F1=0.667, Precision=1.000, Recall=0.500",
         )
         self.assertEqual(
             cm.output[2],
-            "INFO:nlbse_jex.data_handler:Class 2: F1=0.000, Precision=0.000, Recall=0.000",
+            "INFO:beyondBalance.data_handler:Class 2: F1=0.000, Precision=0.000, Recall=0.000",
         )
         self.assertEqual(
             cm.output[3],
-            "INFO:nlbse_jex.data_handler:Class 3: F1=0.000, Precision=0.000, Recall=0.000",
+            "INFO:beyondBalance.data_handler:Class 3: F1=0.000, Precision=0.000, Recall=0.000",
         )
         self.assertEqual(
             cm.output[4],
-            "INFO:nlbse_jex.data_handler:Class 4: F1=0.000, Precision=0.000, Recall=0.000",
+            "INFO:beyondBalance.data_handler:Class 4: F1=0.000, Precision=0.000, Recall=0.000",
         )
 
         self.assertEqual(True, os.path.isdir(dh.output_path))
