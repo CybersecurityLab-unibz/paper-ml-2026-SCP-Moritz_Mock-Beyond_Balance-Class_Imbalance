@@ -75,7 +75,7 @@ See `beyondBalance/utils.py:parse_args` for all options.
 
 ## API Reference
 
-### nlbse_jex.data_handler.DataHandler
+### beyondBalance.data_handler.DataHandler
 Handles data loading, preprocessing, metrics, and results management.
 
 **Constructor:**
@@ -92,7 +92,7 @@ DataHandler(args)
 - `find_best_args()`: Load best config from CSV
 - `calculate_weights()`: Compute class weights
 
-### nlbse_jex.linear_weights.LinearWeights
+### beyondBalance.linear_weights.LinearWeights
 Computes class weights for static strategies (EW, ICF, RBF) or custom callables.
 
 **Constructor:**
@@ -102,7 +102,7 @@ LinearWeights(type, labels)
 **Key methods:**
 - `get_class_weight_dicts()`: Returns list of class weight dicts
 
-### nlbse_jex.proxy.Proxy
+### beyondBalance.proxy.Proxy
 Manages model selection, instantiation, and training/evaluation.
 
 **Constructor:**
@@ -112,7 +112,7 @@ Proxy(args)
 **Key methods:**
 - `create_model()`, `create_trainer()`, `train()`, `eval()`, `run_already_exists()`
 
-### nlbse_jex.utils
+### beyondBalance.utils
 Utility functions for config parsing, metrics, device selection, and dynamic imports.
 
 **Notable functions:**
