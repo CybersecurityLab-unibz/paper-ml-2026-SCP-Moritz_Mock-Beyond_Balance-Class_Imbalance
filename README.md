@@ -152,7 +152,7 @@ You can also provide a custom weighting function as a `.py` file.
 
 See `linear_weights.py` and `dynamic_weights/` for implementation details.
 
-### Example data
+## Example data
 
 The folder [data](data/) contains example data.
 
