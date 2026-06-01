@@ -1,4 +1,4 @@
-# Optimizing in the Shadows: Addressing Class Imbalance in Fine-Tuning Deep Learners
+# Beyond Balance–Addressing class imbalance in fine-tuning deep learners
 
 *Beyond Balance* is a flexible framework for multi-label text classification in software engineering, supporting dynamic and static weighted loss strategies, and easy integration of custom models and metrics.
 
