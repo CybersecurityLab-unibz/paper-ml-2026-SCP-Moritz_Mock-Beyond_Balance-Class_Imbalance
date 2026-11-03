@@ -15,6 +15,7 @@ from beyondBalance.utils import recursively_delete_all_files
 from beyondBalance.utils import find_function_callable
 from beyondBalance.utils import isDynamic
 
+
 class DataHandler:
     def __init__(self, args):
         """

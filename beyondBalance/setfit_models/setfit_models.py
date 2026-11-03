@@ -5,7 +5,7 @@ from beyondBalance.data_handler import DataHandler
 from beyondBalance.setfit_models.setfit_model import SetFitModel
 from beyondBalance.setfit_models.setfit_head import SetFitHead
 from beyondBalance.setfit_models.setfit_trainer import SetFitTrainer
-from beyondBalance.utils import compute_metrics_setfit
+from beyondBalance.utils import compute_metrics_setfit, select_training_samples
 import torch
 import yaml
 from functools import partial
@@ -120,7 +120,9 @@ class SetFitModels(DataHandler):
         self.trainer = SetFitTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train,  # .select(range(50)), #TODO remove range
+            train_dataset=select_training_samples(
+                self.data_train, self.args.sample_size
+            ),
             eval_dataset=self.data_test,
             metric=partial(
                 compute_metrics_setfit, costume_metric=self.args.costume_metrics
