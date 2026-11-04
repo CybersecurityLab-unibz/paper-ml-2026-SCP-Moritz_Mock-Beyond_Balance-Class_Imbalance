@@ -22,6 +22,7 @@ class DataHandler:
         Initializes the data handler for training, evaluation, and model management.
 
         This constructor:
+            - Rejects non-positive sample sizes before loading data or creating paths
             - Sets up logging and stores the provided arguments
             - Initializes various attributes for datasets, paths, and class weights
             - Detects the computation device (CPU/GPU)
@@ -36,7 +37,13 @@ class DataHandler:
 
         Returns:
             None
+
+        Raises:
+            ValueError: If sample_size is not greater than zero or None.
         """
+
+        if args.sample_size is not None and args.sample_size <= 0:
+            raise ValueError("sample_size must be greater zero or None")
 
         self.logger = logging.getLogger("beyondBalance.data_handler")
         self.args = args
@@ -55,9 +62,10 @@ class DataHandler:
         self.isDynamic = isDynamic(self.args.weighted_loss_strategy)
         self.read_data()
         self.create_paths()
-        self.set_seed(42)
+        self.seed = 42
+        self.set_seed()
 
-    def set_seed(self, seed):
+    def set_seed(self):
         """
         Sets the random seed for reproducibility across NumPy, Python's random module, and PyTorch (CPU, MPS, and CUDA).
 
@@ -73,13 +81,13 @@ class DataHandler:
             None
         """
 
-        np.random.seed(seed)
-        random.seed(seed)
+        np.random.seed(self.seed)
+        random.seed(self.seed)
 
-        torch.manual_seed(seed)
+        torch.manual_seed(self.seed)
         if torch.cuda.is_available():
-            torch.cuda.manual_seed(seed)
-            torch.cuda.manual_seed_all(seed)
+            torch.cuda.manual_seed(self.seed)
+            torch.cuda.manual_seed_all(self.seed)
 
         torch.backends.cudnn.enabled = True
         torch.backends.cudnn.benchmark = False
@@ -92,6 +100,7 @@ class DataHandler:
         This method:
             - Constructs a base directory structure using `self.args.result_path`, sanitized model path, and dataset name
             - Sets the path to the results CSV file (`self.csv_path`)
+            - Separates checkpoints, logs, and best models by training sample size
             - Depending on whether model maximization is enabled (`self.args.maximise_model`):
                 - Sets paths for checkpoints and logs accordingly
                 - Creates directories for checkpoints, logs, and optionally best model storage
@@ -108,17 +117,16 @@ class DataHandler:
         self.csv_path = os.path.join(
             base_path, model_path, self.dataset_name, "final.csv"
         )
+        run_path = os.path.join(base_path, model_path, self.dataset_name)
+        if self.args.sample_size is not None:
+            run_path = os.path.join(run_path, f"samples_{self.args.sample_size}")
 
         if self.args.maximise_model:
             self.output_path = os.path.join(
-                base_path,
-                model_path,
-                self.dataset_name,
-                "maximise_model",
-                "checkpoints",
+                run_path, "maximise_model", "checkpoints"
             )
             self.logs_path = os.path.join(
-                base_path, model_path, self.dataset_name, "maximise_model", "logs"
+                run_path, "maximise_model", "logs"
             )
             os.makedirs(self.output_path, exist_ok=True)
             os.makedirs(self.logs_path, exist_ok=True)
@@ -141,14 +149,12 @@ class DataHandler:
             )
 
             self.output_path = os.path.join(
-                base_path, model_path, self.dataset_name, parameters, "checkpoints"
+                run_path, parameters, "checkpoints"
             )
             self.logs_path = os.path.join(
-                base_path, model_path, self.dataset_name, parameters, "logs"
+                run_path, parameters, "logs"
             )
-            self.best_model = os.path.join(
-                base_path, model_path, self.dataset_name, "best_model"
-            )
+            self.best_model = os.path.join(run_path, "best_model")
 
             os.makedirs(self.best_model, exist_ok=True)
             os.makedirs(self.output_path, exist_ok=True)
@@ -198,7 +204,9 @@ class DataHandler:
             None
         """
 
-        if not os.path.exists(self.csv_path):
+        if os.path.exists(self.csv_path):
+            df = pd.read_csv(self.csv_path, sep=";")
+        else:
             columns = [
                 "Model",
                 "Dataset",
@@ -208,13 +216,17 @@ class DataHandler:
                 "Learning Rate",
                 "Weight Decay",
                 "Freeze Embeddings",
+                "Sample Size",
                 "Average Precision",
                 "Average Recall",
                 "Average F1",
             ]
             columns = columns + list(metric.keys())
             df = pd.DataFrame(columns=columns)
-            df.to_csv(self.csv_path, index=False, sep=";")
+
+        # Historical rows do not record how many training samples were used.
+        if "Sample Size" not in df.columns:
+            df["Sample Size"] = "unknown"
 
         avg_precision = np.mean(
             [float(v) for k, v in metric.items() if k.endswith("_precision")]
@@ -224,30 +236,33 @@ class DataHandler:
         )
         avg_f1 = np.mean([float(v) for k, v in metric.items() if k.endswith("_f1")])
 
-        df = pd.read_csv(self.csv_path, sep=";")
-
-        row = [
-            self.args.model_path,
-            self.dataset_name,
-            (
+        row = {
+            "Model": self.args.model_path,
+            "Dataset": self.dataset_name,
+            "Weighted Loss Strategy": (
                 self.args.weighted_loss_strategy
                 if not isinstance(self.args.weighted_loss_strategy, types.FunctionType)
                 else self.args.weighted_loss_strategy.__name__
             ),
-            self.args.batch_size,
-            self.args.epoch,
-            self.args.lr,
-            self.args.weight_decay,
-            self.args.freeze_embeddings,
-            avg_precision,
-            avg_recall,
-            avg_f1,
-        ] + list(metric.values())
+            "Batch Size": self.args.batch_size,
+            "Epoch": self.args.epoch,
+            "Learning Rate": self.args.lr,
+            "Weight Decay": self.args.weight_decay,
+            "Freeze Embeddings": self.args.freeze_embeddings,
+            "Sample Size": (
+                self.args.sample_size if self.args.sample_size is not None else "all"
+            ),
+            "Average Precision": avg_precision,
+            "Average Recall": avg_recall,
+            "Average F1": avg_f1,
+            **metric,
+        }
 
         df.loc[len(df)] = row
         df.to_csv(self.csv_path, index=False, sep=";")
 
-        if len(df[df["Average F1"] > avg_f1]) == 0:
+        matching_runs = self._results_for_sample_size(df)
+        if len(matching_runs[matching_runs["Average F1"] > avg_f1]) == 0:
             self.logger.info("New best average F1 found!")
             self.update_best_model()
 
@@ -296,6 +311,19 @@ class DataHandler:
 
         copy_all_files(self.output_path, self.best_model)
 
+    def _results_for_sample_size(self, df):
+        """Return rows with a recorded sample size matching the current run.
+
+        Full-dataset runs are recorded as ``all``. Legacy rows with missing or
+        unknown sample sizes cannot establish that a run has already completed.
+        """
+        if "Sample Size" not in df.columns:
+            return df.iloc[0:0]
+        if self.args.sample_size is None:
+            return df[df["Sample Size"] == "all"]
+        sample_sizes = pd.to_numeric(df["Sample Size"], errors="coerce")
+        return df[sample_sizes == self.args.sample_size]
+
     def run_already_exists(self):
         """
         Checks whether a training run with the current configuration already exists in the results CSV.
@@ -311,6 +339,7 @@ class DataHandler:
                 - Learning rate
                 - Weight decay
                 - Freeze embeddings flag
+                - Training sample size (or the full dataset)
             - Returns True if a matching run exists, otherwise False
 
         Returns:
@@ -321,6 +350,7 @@ class DataHandler:
             return False
 
         df = pd.read_csv(self.csv_path, sep=";")
+        df = self._results_for_sample_size(df)
         df = df[
             (df["Model"] == self.args.model_path)
             & (df["Dataset"] == self.dataset_name)
@@ -435,7 +465,7 @@ class DataHandler:
 
         This method:
             - Reads performance metrics from a CSV file at `self.csv_path`
-            - Selects the run with the highest "Average F1" score
+            - Selects the run with the highest "Average F1" score for the current sample size
             - Updates the `args` object with the best values for:
                 - Weighted loss strategy (supports predefined or callable strategies)
                 - Batch size
@@ -446,9 +476,17 @@ class DataHandler:
 
         Returns:
             None
+
+        Raises:
+            ValueError: If no previous run records the requested sample size.
         """
 
         df = pd.read_csv(self.csv_path, sep=";")
+        df = self._results_for_sample_size(df)
+        if df.empty:
+            raise ValueError(
+                f"No previous runs found for sample_size={self.args.sample_size}"
+            )
         self.logger.info(df)
         best_run = df.loc[df["Average F1"].idxmax()]
         self.args.weighted_loss_strategy = (

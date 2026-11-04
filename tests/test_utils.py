@@ -112,12 +112,39 @@ class TestUtils(unittest.TestCase):
             args = parse_args().parse_args()
         self.assertEqual(args.sample_size, 2)
 
+    def test_negative_sample_size_argument(self):
+        with patch("sys.stderr"), self.assertRaises(SystemExit) as error:
+            parse_args().parse_args(
+                [
+                    "--train",
+                    "train.csv",
+                    "--test",
+                    "test.csv",
+                    "--column-key-text",
+                    "text",
+                    "--column-key-label",
+                    "label",
+                    "--sample-size",
+                    "-1",
+                ]
+            )
+        self.assertEqual(error.exception.code, 2)
+
+    def test_negative_sample_size_config(self):
+        generate_base_config(self.default_config_path, {"sample_size": -1})
+        parser = parse_args()
+        args = parser.parse_args()
+
+        with self.assertRaisesRegex(ValueError, "sample_size"):
+            read_config(args, parser)
+
     def test_select_training_samples(self):
         dataset = Dataset.from_dict({"text": ["a", "b", "c"]})
 
         self.assertIs(select_training_samples(dataset), dataset)
-        first_sample = select_training_samples(dataset, 2)
-        second_sample = select_training_samples(dataset, 2)
+        self.assertEqual(len(select_training_samples(dataset, 2)), 2)
+        first_sample = select_training_samples(dataset, 2, seed=42)
+        second_sample = select_training_samples(dataset, 2, seed=42)
         self.assertEqual(len(first_sample), 2)
         self.assertEqual(first_sample["text"], second_sample["text"])
         self.assertEqual(len(select_training_samples(dataset, 10)), 3)

@@ -5,7 +5,8 @@ from beyondBalance.data_handler import DataHandler
 from beyondBalance.setfit_models.setfit_model import SetFitModel
 from beyondBalance.setfit_models.setfit_head import SetFitHead
 from beyondBalance.setfit_models.setfit_trainer import SetFitTrainer
-from beyondBalance.utils import compute_metrics_setfit, select_training_samples
+from beyondBalance.utils import compute_metrics_setfit
+from beyondBalance.utils import select_training_samples
 import torch
 import yaml
 from functools import partial
@@ -111,9 +112,6 @@ class SetFitModels(DataHandler):
             num_epochs=self.args.epoch,
             head_learning_rate=self.args.lr,
             l2_weight=self.args.weight_decay,  # https://docs.pytorch.org/docs/stable/generated/torch.optim.AdamW.html
-            # save_strategy="epoch",
-            # save_total_limit=1,
-            # num_iterations=20,  # as default in setfit 1.0.0
             **self.args.setfit_parameters,
         )
 
@@ -121,7 +119,7 @@ class SetFitModels(DataHandler):
             model=self.model,
             args=args,
             train_dataset=select_training_samples(
-                self.data_train, self.args.sample_size
+                self.data_train, self.args.sample_size, self.seed
             ),
             eval_dataset=self.data_test,
             metric=partial(

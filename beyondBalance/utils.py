@@ -750,14 +750,15 @@ def positive_value_float(v):
     return casted_value
 
 
-def select_training_samples(dataset, sample_size=None):
-    """Return the full dataset or a deterministic random subset of its rows.
+def select_training_samples(dataset, sample_size=None, seed=None):
+    """Return the full dataset or a random subset of its rows.
 
     Args:
         dataset: A Hugging Face dataset supporting ``len`` and ``select``.
         sample_size (int, optional): Maximum number of rows to return. If provided,
-            rows are shuffled with a fixed seed before selection. If omitted, the
+            rows are shuffled before selection. If omitted, the
             original dataset is returned.
+        seed (int, optional): Shuffle seed. Pass a fixed value for reproducible subsets.
 
     Returns:
         The original dataset or a selected subset of it.
@@ -766,7 +767,7 @@ def select_training_samples(dataset, sample_size=None):
     if sample_size is None:
         return dataset
 
-    return dataset.shuffle(seed=42).select(range(min(sample_size, len(dataset))))
+    return dataset.shuffle(seed=seed).select(range(min(sample_size, len(dataset))))
 
 
 device = torch.device(
