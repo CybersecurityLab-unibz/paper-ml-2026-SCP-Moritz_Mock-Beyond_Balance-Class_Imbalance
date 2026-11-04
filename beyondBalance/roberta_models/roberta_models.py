@@ -11,6 +11,7 @@ import os
 from beyondBalance.roberta_models.WeightedBCELoss import WeightedBCELoss
 from beyondBalance.roberta_models.roberta_trainer import RoBERTaTrainer
 from beyondBalance.utils import compute_metrics_roberta
+from beyondBalance.utils import select_training_samples
 from beyondBalance.dynamic_weights.weight_methods import WeightMethods
 from functools import partial
 
@@ -172,8 +173,6 @@ class RoBERTaModels(DataHandler):
             num_train_epochs=self.args.epoch,
             weight_decay=self.args.weight_decay,
             learning_rate=self.args.lr,
-            # save_strategy="epoch",
-            # save_total_limit=1,
             **self.args.roberta_parameters,
         )
 
@@ -182,7 +181,9 @@ class RoBERTaModels(DataHandler):
         self.trainer = RoBERTaTrainer(
             model=self.model,
             args=args,
-            train_dataset=self.data_train.select(range(50)),  # TODO remove range
+            train_dataset=select_training_samples(
+                self.data_train, self.args.sample_size, self.args.seed
+            ),
             eval_dataset=self.data_test,
             custom_loss=self.custom_loss,
             data_collator=data_collator,

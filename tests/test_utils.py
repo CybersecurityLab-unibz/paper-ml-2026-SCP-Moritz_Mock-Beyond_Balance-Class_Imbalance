@@ -2,6 +2,7 @@ import argparse
 import unittest
 
 import numpy as np
+from datasets import Dataset
 
 from beyondBalance.utils import read_config, str2bool, DEFAULT_COBA_CONFIG, str2json
 from beyondBalance.utils import read_files_weighted_loss_strategy
@@ -18,6 +19,7 @@ from beyondBalance.utils import load_yaml_config
 from beyondBalance.utils import import_function_from_path
 from beyondBalance.utils import validate_config
 from beyondBalance.utils import isDynamic
+from beyondBalance.utils import select_training_samples
 from unittest.mock import patch
 import os
 import filecmp
@@ -86,6 +88,66 @@ class TestUtils(unittest.TestCase):
         generate_base_config(self.default_config_path, data)
         yml = load_yaml_config(self.default_config_path)
         self.assertEqual(data, yml)
+
+    def test_sample_size_argument(self):
+        args = parse_args().parse_args()
+        self.assertIsNone(args.sample_size)
+
+        with patch(
+            "sys.argv",
+            [
+                "program_name",
+                "--train",
+                "train.csv",
+                "--test",
+                "test.csv",
+                "--column-key-text",
+                "text",
+                "--column-key-label",
+                "label",
+                "--sample-size",
+                "2",
+            ],
+        ):
+            args = parse_args().parse_args()
+        self.assertEqual(args.sample_size, 2)
+
+    def test_negative_sample_size_argument(self):
+        with patch("sys.stderr"), self.assertRaises(SystemExit) as error:
+            parse_args().parse_args(
+                [
+                    "--train",
+                    "train.csv",
+                    "--test",
+                    "test.csv",
+                    "--column-key-text",
+                    "text",
+                    "--column-key-label",
+                    "label",
+                    "--sample-size",
+                    "-1",
+                ]
+            )
+        self.assertEqual(error.exception.code, 2)
+
+    def test_negative_sample_size_config(self):
+        generate_base_config(self.default_config_path, {"sample_size": -1})
+        parser = parse_args()
+        args = parser.parse_args()
+
+        with self.assertRaisesRegex(ValueError, "sample_size"):
+            read_config(args, parser)
+
+    def test_select_training_samples(self):
+        dataset = Dataset.from_dict({"text": ["a", "b", "c"]})
+
+        self.assertIs(select_training_samples(dataset), dataset)
+        self.assertEqual(len(select_training_samples(dataset, 2)), 2)
+        first_sample = select_training_samples(dataset, 2, seed=42)
+        second_sample = select_training_samples(dataset, 2, seed=42)
+        self.assertEqual(len(first_sample), 2)
+        self.assertEqual(first_sample["text"], second_sample["text"])
+        self.assertEqual(len(select_training_samples(dataset, 10)), 3)
 
     def test_read_config_does_not_exists(self):
         parser = parse_args()

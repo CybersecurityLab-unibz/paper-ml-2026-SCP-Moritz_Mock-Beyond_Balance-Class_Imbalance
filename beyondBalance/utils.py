@@ -750,6 +750,26 @@ def positive_value_float(v):
     return casted_value
 
 
+def select_training_samples(dataset, sample_size=None, seed=None):
+    """Return the full dataset or a random subset of its rows.
+
+    Args:
+        dataset: A Hugging Face dataset supporting ``len`` and ``select``.
+        sample_size (int, optional): Maximum number of rows to return. If provided,
+            rows are shuffled before selection. If omitted, the
+            original dataset is returned.
+        seed (int, optional): Shuffle seed. Pass a fixed value for reproducible subsets.
+
+    Returns:
+        The original dataset or a selected subset of it.
+    """
+
+    if sample_size is None:
+        return dataset
+
+    return dataset.shuffle(seed=seed).select(range(min(sample_size, len(dataset))))
+
+
 device = torch.device(
     "mps"
     if torch.backends.mps.is_available() and torch.backends.mps.is_built()
@@ -865,6 +885,8 @@ def parse_args():
         --save-model-instances (str): Whether to save the last or all model instances. Choices: ["last", "all"]. Default is "last".
         --model-path (str): Path or identifier for the pre-trained model. Default is "sentence-transformers/paraphrase-MiniLM-L6-v2".
         --result-path (str): Path where results and logs will be saved. Default is ".".
+        --sample-size (int): Optionally train on the first N samples instead of the full training set. Default is None.
+        --seed (int): Random seed for reproducibility. Default is 42.
         --maximise-model (bool): Whether to perform exhaustive search and save the best model. Default is False.
         --freeze-embeddings (bool): Whether to freeze embeddings during training. Default is False.
         --famo-config (dict): Configuration for the FAMO dynamic weighting strategy. Default is `DEFAULT_FAMO_CONFIG`.
@@ -908,6 +930,13 @@ def parse_args():
         "--costume-whitelist-roberta", nargs="*", type=str, default=None
     )
     parser.add_argument("--result-path", type=str, default=".")
+    parser.add_argument(
+        "--sample-size",
+        type=positive_value_int,
+        default=None,
+        help="Optionally train on the first N samples instead of the full training set.",
+    )
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--maximise-model", type=str2bool, default=False)
     parser.add_argument("--freeze-embeddings", type=str2bool, default=False)
     parser.add_argument("--n-layer", type=int, default=2)
