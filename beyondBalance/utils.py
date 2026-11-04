@@ -886,6 +886,7 @@ def parse_args():
         --model-path (str): Path or identifier for the pre-trained model. Default is "sentence-transformers/paraphrase-MiniLM-L6-v2".
         --result-path (str): Path where results and logs will be saved. Default is ".".
         --sample-size (int): Optionally train on the first N samples instead of the full training set. Default is None.
+        --seed (int): Random seed for reproducibility. Default is 42.
         --maximise-model (bool): Whether to perform exhaustive search and save the best model. Default is False.
         --freeze-embeddings (bool): Whether to freeze embeddings during training. Default is False.
         --famo-config (dict): Configuration for the FAMO dynamic weighting strategy. Default is `DEFAULT_FAMO_CONFIG`.
@@ -935,6 +936,7 @@ def parse_args():
         default=None,
         help="Optionally train on the first N samples instead of the full training set.",
     )
+    parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--maximise-model", type=str2bool, default=False)
     parser.add_argument("--freeze-embeddings", type=str2bool, default=False)
     parser.add_argument("--n-layer", type=int, default=2)

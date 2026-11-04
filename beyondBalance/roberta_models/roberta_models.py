@@ -182,7 +182,7 @@ class RoBERTaModels(DataHandler):
             model=self.model,
             args=args,
             train_dataset=select_training_samples(
-                self.data_train, self.args.sample_size, self.seed
+                self.data_train, self.args.sample_size, self.args.seed
             ),
             eval_dataset=self.data_test,
             custom_loss=self.custom_loss,

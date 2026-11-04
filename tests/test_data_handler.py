@@ -79,19 +79,19 @@ class TestUtils(unittest.TestCase):
         dh = DataHandler(args)
         self.assertEqual(
             dh.csv_path,
-            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/final.csv',
+            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/seed_42/final.csv',
         )
         self.assertEqual(
             dh.best_model,
-            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/best_model',
+            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/seed_42/best_model',
         )
         self.assertEqual(
             dh.logs_path,
-            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/32_5_0.01_0_EW_False/logs',
+            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/seed_42/32_5_0.01_0_EW_False/logs',
         )
         self.assertEqual(
             dh.output_path,
-            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/32_5_0.01_0_EW_False/checkpoints',
+            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/seed_42/32_5_0.01_0_EW_False/checkpoints',
         )
 
     def test_data_handler_maximise_model(self):
@@ -105,11 +105,11 @@ class TestUtils(unittest.TestCase):
         dh = DataHandler(args)
         self.assertEqual(
             dh.output_path,
-            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/maximise_model/checkpoints',
+            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/seed_42/maximise_model/checkpoints',
         )
         self.assertEqual(
             dh.logs_path,
-            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/maximise_model/logs',
+            f'{self.path_prefix}/results/sentence_transformers_paraphrase_MiniLM_L6_v2/{self.dataset_name}/seed_42/maximise_model/logs',
         )
 
     def test_data_handler_in_depth(self):
@@ -223,7 +223,7 @@ class TestSampleSizeTracking(unittest.TestCase):
         self.directory = TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
 
-    def make_handler(self, sample_size=None, maximise_model=False):
+    def make_handler(self, sample_size=None, maximise_model=False, seed=42):
         args = parse_args().parse_args(
             [
                 "--train", "data/train.csv",
@@ -231,6 +231,7 @@ class TestSampleSizeTracking(unittest.TestCase):
                 "--column-key-text", "text",
                 "--column-key-label", "label",
                 "--result-path", self.directory.name,
+                "--seed", str(seed),
             ]
         )
         for name in ("batch_size", "epoch", "lr", "weight_decay", "weighted_loss_strategy"):
@@ -263,6 +264,42 @@ class TestSampleSizeTracking(unittest.TestCase):
         maximised = [self.make_handler(size, maximise_model=True) for size in (None, 2, 3)]
         for attribute in ("output_path", "logs_path"):
             self.assertEqual(len({getattr(handler, attribute) for handler in maximised}), 3)
+
+    def test_paths_distinguish_seeds(self):
+        for sample_size in (None, 2):
+            for maximise_model in (False, True):
+                with self.subTest(sample_size=sample_size, maximise_model=maximise_model):
+                    first = self.make_handler(sample_size, maximise_model, seed=42)
+                    second = self.make_handler(sample_size, maximise_model, seed=7)
+                    repeated = self.make_handler(sample_size, maximise_model, seed=42)
+                    attributes = ["csv_path", "output_path", "logs_path"]
+                    if not maximise_model:
+                        attributes.append("best_model")
+                    for attribute in attributes:
+                        first_path = getattr(first, attribute)
+                        second_path = getattr(second, attribute)
+                        self.assertIn("seed_42", first_path.split(os.sep))
+                        self.assertIn("seed_7", second_path.split(os.sep))
+                        self.assertNotEqual(first_path, second_path)
+                        self.assertEqual(first_path, getattr(repeated, attribute))
+                        self.assertTrue(os.path.isdir(os.path.dirname(first_path)))
+
+    def test_run_history_is_separate_for_each_seed(self):
+        first = self.make_handler(2, seed=42)
+        second = self.make_handler(2, seed=7)
+        self.record_run(first, score=0.9).assert_called_once()
+        self.assertTrue(first.run_already_exists())
+        self.assertFalse(second.run_already_exists())
+
+        second.args.epoch = 9
+        self.record_run(second, score=0.5).assert_called_once()
+        self.assertTrue(second.run_already_exists())
+        first.find_best_args()
+        second.find_best_args()
+        self.assertEqual(first.args.epoch, 5)
+        self.assertEqual(second.args.epoch, 9)
+        self.assertEqual(pd.read_csv(first.csv_path, sep=";")["Average F1"].tolist(), [0.9])
+        self.assertEqual(pd.read_csv(second.csv_path, sep=";")["Average F1"].tolist(), [0.5])
 
     def test_duplicate_detection_and_csv_distinguish_sample_sizes(self):
         subset = self.make_handler(2)

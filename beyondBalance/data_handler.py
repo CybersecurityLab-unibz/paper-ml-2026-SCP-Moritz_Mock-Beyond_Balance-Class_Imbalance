@@ -15,7 +15,6 @@ from beyondBalance.utils import recursively_delete_all_files
 from beyondBalance.utils import find_function_callable
 from beyondBalance.utils import isDynamic
 
-
 class DataHandler:
     def __init__(self, args):
         """
@@ -23,6 +22,7 @@ class DataHandler:
 
         This constructor:
             - Rejects non-positive sample sizes before loading data or creating paths
+            - Rejects non-positive seeds before loading data or creating paths
             - Sets up logging and stores the provided arguments
             - Initializes various attributes for datasets, paths, and class weights
             - Detects the computation device (CPU/GPU)
@@ -40,10 +40,14 @@ class DataHandler:
 
         Raises:
             ValueError: If sample_size is not greater than zero or None.
+            ValueError: If seed is not greater than zero or None.
         """
 
         if args.sample_size is not None and args.sample_size <= 0:
             raise ValueError("sample_size must be greater zero or None")
+
+        if args.seed is not None and args.seed <= 0:
+            raise ValueError("seed must be greater zero or None")
 
         self.logger = logging.getLogger("beyondBalance.data_handler")
         self.args = args
@@ -62,7 +66,6 @@ class DataHandler:
         self.isDynamic = isDynamic(self.args.weighted_loss_strategy)
         self.read_data()
         self.create_paths()
-        self.seed = 42
         self.set_seed()
 
     def set_seed(self):
@@ -81,13 +84,13 @@ class DataHandler:
             None
         """
 
-        np.random.seed(self.seed)
-        random.seed(self.seed)
+        np.random.seed(self.args.seed)
+        random.seed(self.args.seed)
 
-        torch.manual_seed(self.seed)
+        torch.manual_seed(self.args.seed)
         if torch.cuda.is_available():
-            torch.cuda.manual_seed(self.seed)
-            torch.cuda.manual_seed_all(self.seed)
+            torch.cuda.manual_seed(self.args.seed)
+            torch.cuda.manual_seed_all(self.args.seed)
 
         torch.backends.cudnn.enabled = True
         torch.backends.cudnn.benchmark = False
@@ -100,6 +103,7 @@ class DataHandler:
         This method:
             - Constructs a base directory structure using `self.args.result_path`, sanitized model path, and dataset name
             - Sets the path to the results CSV file (`self.csv_path`)
+            - Separates result CSVs, checkpoints, logs, and best models by seed
             - Separates checkpoints, logs, and best models by training sample size
             - Depending on whether model maximization is enabled (`self.args.maximise_model`):
                 - Sets paths for checkpoints and logs accordingly
@@ -114,10 +118,10 @@ class DataHandler:
         model_path = re.sub(r"[/-]", "_", self.args.model_path)
         self.dataset_name = re.sub("-", "_", "_".join(self.args.train.split("/")[:-1]))
 
-        self.csv_path = os.path.join(
-            base_path, model_path, self.dataset_name, "final.csv"
+        run_path = os.path.join(
+            base_path, model_path, self.dataset_name, f"seed_{self.args.seed}"
         )
-        run_path = os.path.join(base_path, model_path, self.dataset_name)
+        self.csv_path = os.path.join(run_path, "final.csv")
         if self.args.sample_size is not None:
             run_path = os.path.join(run_path, f"samples_{self.args.sample_size}")
 
